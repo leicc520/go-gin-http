@@ -2,6 +2,8 @@ package core
 
 import (
 	"encoding/json"
+	"errors"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -105,6 +107,38 @@ func WritePidFile(name string)  {
 /***************************************************************************
  服务的管理放到的linux/windows当中，因为不同系统对优雅启动的支出不一致
  */
+func ShouldBind(c *gin.Context, obj interface{}) error {
+	sKey := c.GetHeader(EncryptKeys)
+	if len(sKey) > 6 {//解密的数据业务处理逻辑
+		cryptSt := Crypt{JKey: []byte(sKey)}
+		c.Set(EncryptName, cryptSt) //设置数据解码
+		oldStr, err := ioutil.ReadAll(c.Request.Body)
+		if err != nil {
+			log.Write(log.ERROR, "读取请求数据异常", err)
+			return err
+		}
+		log.Write(log.INFO, "数据接收:", string(oldStr))
+		defer c.Request.Body.Close()
+		req := cryptSt.Decrypt(oldStr)
+		log.Write(log.INFO, "数据解码:", string(req))
+		if req == nil || len(req) < 1 {
+			return errors.New("数据解码失败,无法操作.")
+		}
+		if err = json.Unmarshal(req, obj); err != nil {
+			log.Write(log.ERROR, "数据解码:", string(req), err)
+			return err
+		}
+		if err = ValidateStruct(obj); err != nil {
+			log.Write(log.ERROR, "结构校验:", string(req), err)
+			return err
+		}
+	} else {//非加密的业务处理逻辑
+		if err := c.ShouldBind(&obj); err != nil {
+			return  err
+		}
+	}
+	return nil
+}
 
 //获取请求的token数据资料信息
 func JWTACLToken(c *gin.Context) string {
@@ -134,15 +168,15 @@ func GINRecovery() gin.HandlerFunc {
 		defer func() {
 			log.Write(log.DEBUG, c.Request.RequestURI, "执行时间:", time.Since(sTime))
 			if err := recover(); err != nil {//执行panic数据恢复处理逻辑
-				if o, ok := err.(*HttpError); ok {
-					c.JSON(200, o.ToMap())
+				view := NewHttpView(c)
+				if o, ok := err.(HttpError); ok {
+					view.ErrorDisplay(o.Code, o.Msg)
 				} else {//未知的错误情况处理逻辑
 					rtStack := orm.RuntimeStack(3)
 					errStr, _  := json.Marshal(err)
 					log.Write(log.ERROR, c.Request.RequestURI,  c.Request.UserAgent(), JWTACLToken(c))
 					log.Write(log.ERROR, "GINRecovery", string(errStr), string(rtStack))
-					err := &HttpError{Code: 500, Msg: "内部服务错误,拒绝服务"}
-					c.JSON(500, err.ToMap())
+					view.ErrorDisplay(500, "内部服务错误,拒绝服务")
 				}
 				c.Abort()
 			}
