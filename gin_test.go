@@ -10,6 +10,15 @@ import (
 
 func TestAPP(t *testing.T) {
 	config := AppConfigSt{Host: "127.0.0.1:8081", Name: "go.test.srv", Domain: "127.0.0.1:8081"}
+	jaeger := JaegerTracingConfigSt{
+		Agent: "127.0.0.1:6831",
+		Type: "const",
+		Param: 1,
+		IsTrace: true,
+	}
+	jaeger.Init("go.test.srv")
+
+
 	NewApp(&config).RegHandler(func(c *gin.Engine) {
 		c.GET("/demo", func(context *gin.Context) {
 			context.JSON(200, orm.SqlMap{"demo":"test"})

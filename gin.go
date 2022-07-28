@@ -50,7 +50,7 @@ var coConfig *AppConfigSt = nil
 func NewApp(config *AppConfigSt) *Application {
 	coConfig = config
 	app := &Application{app: gin.New(), handler: make([]AppStartHandler, 0), config: config}
-	app.app.Use(gin.Logger(), GINRecovery())
+	app.app.Use(gin.Logger(), GINRecovery(), GINTracing())
 	if strings.ToLower(config.CrossDomain) == "on" {
 		app.app.Use(GINCors()) //跨域的支持集成
 	}
