@@ -21,10 +21,15 @@ type JwtUser struct {
 	Loginpw string
 }
 
-func InitJwtSecret(jwtSecret string)  {
-	if len(jwtSecret) > 8 {
+//初始化Jwt秘钥
+func init() {
+	jwtSecret := os.Getenv("DCJWT")
+	if len(jwtSecret) > 0 {
 		gJwtSecret = []byte(jwtSecret)
 	}
+	fmt.Println("====================JWT=========================")
+	fmt.Println(string(gJwtSecret))
+	fmt.Println("====================JWT=========================")
 }
 
 //获取客户端ID 数据信息

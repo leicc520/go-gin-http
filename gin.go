@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/leicc520/go-orm"
 	"github.com/leicc520/go-orm/log"
+	"github.com/leicc520/go-core/tracing"
 )
 
 const (
@@ -23,17 +24,18 @@ const (
 )
 
 type AppConfigSt struct {
-	Host string 		    `yaml:"host"`
-	Name string 		    `yaml:"name"`
-	Ssl string 			    `yaml:"ssl"`
-	Version string 		    `yaml:"version"`
-	ImSeg string 		    `yaml:"im"`
-	Domain string 		    `yaml:"domain"` //网站的域名
-	CertFile string 	    `yaml:"certFile"`
-	KeyFile string 		    `yaml:"keyFile"`
-	CrossDomain string 	    `yaml:"crossDomain"`
-	UpFileDir string 	    `yaml:"upfileDir"`
-	UpFileBase string 	    `yaml:"upfileBase"`
+	Host 		string 	`yaml:"host"`
+	Name 		string 	`yaml:"name"`
+	Ssl 		string 	`yaml:"ssl"`
+	Version 	string 	`yaml:"version"`
+	ImSeg 		string 	`yaml:"im"`
+	Domain 		string 	`yaml:"domain"` //网站的域名
+	CertFile 	string 	`yaml:"certFile"`
+	KeyFile 	string 	`yaml:"keyFile"`
+	CrossDomain string 	`yaml:"crossDomain"`
+	Tracing 	tracing.JaegerTracingConfigSt `yaml:"tracing"`
+	UpFileDir 	string 	`yaml:"upfileDir"`
+	UpFileBase  string 	`yaml:"upfileBase"`
 }
 
 type AppStartHandler func(c *gin.Engine)
@@ -50,12 +52,26 @@ var coConfig *AppConfigSt = nil
 func NewApp(config *AppConfigSt) *Application {
 	coConfig = config
 	app := &Application{app: gin.New(), handler: make([]AppStartHandler, 0), config: config}
-	app.app.Use(gin.Logger(), GINRecovery(), GINTracing())
+	app.app.Use(gin.Logger(), GINRecovery())
+	if config.Tracing.IsTracing() && nil != (&config.Tracing).Init(config.Name) {
+		app.app.Use(GINTracing()) //有配置的话开启链路跟踪
+	}
 	if strings.ToLower(config.CrossDomain) == "on" {
 		app.app.Use(GINCors()) //跨域的支持集成
 	}
 	app.app.GET("/healthz", func(c *gin.Context) {
 		c.String(200, config.Version)
+	})
+	app.app.GET("/tracing", func(c *gin.Context) {
+		str := "OK"
+		if c.Query("s") == "1" {
+			coConfig.Tracing.SetIsTracing(true)
+		} else if c.Query("s") == "0" {
+			coConfig.Tracing.SetIsTracing(false)
+		} else {
+			str = "No Change"
+		}
+		c.String(200, str)
 	})
 	app.app.GET("/errlog", func(c *gin.Context) {
 		lStr := "OK"

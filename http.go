@@ -16,6 +16,10 @@ import (
 	"time"
 
 	"github.com/leicc520/go-orm/log"
+	"github.com/gin-gonic/gin"
+	"github.com/leicc520/go-core/tracing"
+	"github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 )
 
 const CONTENT_TYPE = "content-type"
@@ -36,6 +40,7 @@ type HttpSt struct {
 	timeout      time.Duration
 	cookieJar    *cookiejar.Jar
 	tlsTransport *http.Transport
+	tracingFunc  func(r *http.Request) opentracing.Span
 	header       map[string]string
 }
 
@@ -100,6 +105,27 @@ func (s *HttpSt) SetContentType(typeStr string) *HttpSt {
 		s.header[CONTENT_TYPE] = "application/xml; charset=utf-8"
 	default:
 		s.header[CONTENT_TYPE] = "application/x-www-form-urlencoded"
+	}
+	return s
+}
+
+//注入链路跟踪处理逻辑
+func (s *HttpSt) InjectTrace(c *gin.Context) *HttpSt {
+	spanCtx := tracing.GetTracingCtx(c)
+	s.tracingFunc = func(req *http.Request) opentracing.Span {
+		if spanCtx == nil {
+			return nil
+		}
+		span := opentracing.GlobalTracer().StartSpan("http.api",
+			opentracing.ChildOf(spanCtx.(opentracing.SpanContext)),
+			opentracing.Tag{Key: string(ext.Component), Value: "HTTP"},
+			ext.SpanKindRPCClient)
+		err := opentracing.GlobalTracer().Inject(span.Context(),
+			opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
+		if err != nil {//异常的情况处理逻辑
+			log.Write(log.ERROR, "tracing inject error", err)
+		}
+		return span
 	}
 	return s
 }
@@ -235,6 +261,12 @@ func (s *HttpSt) Request(url string, body []byte, method string) (result []byte)
 	if s.header != nil && len(s.header) > 0 {
 		for key, val := range s.header {
 			req.Header.Set(key, val)
+		}
+	}
+	if s.tracingFunc != nil {//链路跟踪注入处理逻辑
+		span := s.tracingFunc(req)
+		if span != nil {//结束链路跟踪
+			defer span.Finish()
 		}
 	}
 	client := &http.Client{Timeout: s.timeout, Jar: s.cookieJar}
