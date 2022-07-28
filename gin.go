@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -110,16 +108,6 @@ func (app Application) httpProto() (string, string, bool) {
 func (app *Application) RegHandler(handler AppStartHandler) *Application {
 	app.handler = append(app.handler, handler)
 	return app
-}
-
-//启动之后写入pid file文件
-func WritePidFile(name string)  {
-	pidStr := strconv.FormatInt(int64(os.Getpid()), 10)
-	pidFile:= "/run/"+name+".pid"
-	if os.Getenv("DCENV") != "" {
-		pidFile = "/run/"+name+"-"+os.Getenv("DCENV")+".pid"
-	}
-	os.WriteFile(pidFile, []byte(pidStr), 0777)
 }
 
 /***************************************************************************
