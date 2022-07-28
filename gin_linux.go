@@ -15,7 +15,7 @@ func (app *Application) Start() {
 	WritePidFile(app.config.Name) //写入进程pid数据资料信息
  	httpStr, wsStr, isSsl := app.httpProto()
 	log.Write(-1, "=======================start app linux=====================")
-	log.Write(-1, "===http server "+httpStr)
+	log.Write(-1, "===http server{", httpStr, "} jwt={", string(gJwtSecret), "}")
 	if len(wsStr) > 1 {
 		log.Write(-1, "===websocket server "+wsStr)
 	}

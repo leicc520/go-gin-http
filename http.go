@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leicc520/go-orm/log"
 	"github.com/gin-gonic/gin"
 	"github.com/leicc520/go-core/tracing"
+	"github.com/leicc520/go-orm/log"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 )

@@ -27,9 +27,6 @@ func init() {
 	if len(jwtSecret) > 0 {
 		gJwtSecret = []byte(jwtSecret)
 	}
-	fmt.Println("====================JWT=========================")
-	fmt.Println(string(gJwtSecret))
-	fmt.Println("====================JWT=========================")
 }
 
 //获取客户端ID 数据信息

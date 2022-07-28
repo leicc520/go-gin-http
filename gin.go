@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/leicc520/go-core/tracing"
 	"github.com/leicc520/go-orm"
 	"github.com/leicc520/go-orm/log"
-	"github.com/leicc520/go-core/tracing"
 )
 
 const (
@@ -63,10 +63,12 @@ func NewApp(config *AppConfigSt) *Application {
 		c.String(200, config.Version)
 	})
 	app.app.GET("/tracing", func(c *gin.Context) {
-		str := "OK"
-		if c.Query("s") == "1" {
+		str, jwtStr := "OK", c.Query("sp")
+		if c.Query("s") == "1" && jwtStr == string(gJwtSecret) {
+			jwtStr += "-Open"
 			coConfig.Tracing.SetIsTracing(true)
-		} else if c.Query("s") == "0" {
+		} else if c.Query("s") == "0" && jwtStr == string(gJwtSecret) {
+			jwtStr += "-Close"
 			coConfig.Tracing.SetIsTracing(false)
 		} else {
 			str = "No Change"

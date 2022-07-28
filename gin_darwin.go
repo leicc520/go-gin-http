@@ -13,7 +13,7 @@ func (app *Application) Start() {
 	}
 	httpStr, wsStr, isSsl := app.httpProto()
 	log.Write(-1, "=======================start app window=====================")
-	log.Write(-1, "===http server{", httpStr, "}")
+	log.Write(-1, "===http server{", httpStr, "} jwt={", string(gJwtSecret), "}")
 	if len(wsStr) > 1 {
 		log.Write(-1, "===websocket server{", wsStr, "}")
 	}
