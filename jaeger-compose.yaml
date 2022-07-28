@@ -1,0 +1,34 @@
+version: '2'
+services:
+  jaeger-agent:
+    image: jaegertracing/jaeger-agent:1.12
+    stdin_open: true
+    tty: true
+    links:
+    - jaeger-collector:jaeger-collector
+    ports:
+    - 6831:6831/udp
+    command:
+    - --reporter.grpc.host-port=jaeger-collector:14250
+
+  jaeger-collector:
+    image: jaegertracing/jaeger-collector:1.12
+    environment:
+      SPAN_STORAGE_TYPE: elasticsearch
+      ES_SERVER_URLS: http://xxx.xxx.xxx.xxx:9200
+    stdin_open: true
+    external_links:
+    - elasticsearch/elasticsearch:elasticsearch
+    tty: true
+
+  jaeger-query:
+    image: jaegertracing/jaeger-query:1.12
+    environment:
+      SPAN_STORAGE_TYPE: elasticsearch
+      ES_SERVER_URLS: http://xxx.xxx.xxx.xxx:9200
+    stdin_open: true
+    external_links:
+    - elasticsearch/elasticsearch:elasticsearch
+    tty: true
+    ports:
+    - 16686:16686/tcp
