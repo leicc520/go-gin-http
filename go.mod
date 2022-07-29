@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
+	github.com/dchest/captcha v1.0.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/fvbock/endless v0.0.0-20170109170031-447134032cb6
 	github.com/gin-gonic/gin v1.7.3
