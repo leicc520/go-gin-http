@@ -1,4 +1,4 @@
-module github.com/leicc520/go-core
+module github.com/leicc520/go-gin-http
 
 go 1.16
 
