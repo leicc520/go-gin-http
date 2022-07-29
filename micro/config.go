@@ -19,21 +19,8 @@ type Config struct {
 	Cache    cache.CacheConfigSt 	`yaml:"cache"`
 }
 
-//判断是否是目录结构
-func IsDir(dir string) bool {
-	ss, err := os.Stat(dir)
-	if err == nil && ss.IsDir() {
-		return true
-	}
-	return false
-}
-
 //加载配置文件数据信息
 func (c *Config) Load(confName string, config interface{}) *Config {
-	workdir := os.Getenv("WORKDIR")
-	if len(workdir) > 0 && IsDir(workdir)  {
-		os.Chdir(workdir)
-	}
 	file, err := os.Stat(confName)
 	if err == nil && file.Mode().IsRegular() {
 		c.LoadFile(confName, config)
@@ -43,8 +30,8 @@ func (c *Config) Load(confName string, config interface{}) *Config {
 	if len(c.CacheDir) > 0 {
 		cache.GFileCacheDir = c.CacheDir
 	}
-	workdir, err = os.Getwd()
-	log.Write(-1, "workdir {"+workdir+"} cachedir {"+cache.GFileCacheDir+"}", err)
+	workDir, err := os.Getwd()
+	log.Write(-1, "workdir {"+workDir+"} cachedir {"+cache.GFileCacheDir+"}", err)
 	return c
 }
 

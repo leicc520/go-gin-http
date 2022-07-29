@@ -1,16 +1,16 @@
 package core
 
 import (
-	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/leicc520/go-core/tracing"
+	"github.com/leicc520/go-gin-http/tracing"
 	"github.com/leicc520/go-orm"
 	"github.com/leicc520/go-orm/log"
+	jsonIter "github.com/json-iterator/go"
 )
 
 const (
@@ -45,6 +45,7 @@ type Application struct {
 }
 
 var coConfig *AppConfigSt = nil
+var json = jsonIter.ConfigCompatibleWithStandardLibrary
 
 //初始化创建一个http服务的情况
 func NewApp(config *AppConfigSt) *Application {

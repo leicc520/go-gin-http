@@ -12,6 +12,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.0
 	github.com/go-playground/validator/v10 v10.9.0
 	github.com/google/go-cmp v0.5.6 // indirect
+	github.com/json-iterator/go v1.1.9
 	github.com/leicc520/go-orm v1.0.0
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pkg/errors v0.9.1 // indirect
@@ -19,4 +20,5 @@ require (
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/net v0.0.0-20211209124913-491a49abca63 // indirect
+	gopkg.in/yaml.v2 v2.4.0
 )

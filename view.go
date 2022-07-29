@@ -1,7 +1,6 @@
 package core
 
 import (
-	"encoding/json"
 	"github.com/gin-gonic/gin"
 )
 
