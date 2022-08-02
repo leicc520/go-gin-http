@@ -4,16 +4,15 @@ import (
 	"flag"
 	"os"
 	"strings"
-
+	
+	jsonIter "github.com/json-iterator/go"
+	"github.com/leicc520/go-gin-http"
 	"github.com/leicc520/go-orm"
 	"github.com/leicc520/go-orm/log"
 )
 
-const (
-	DCSRV = "DCSRV"
-	DCJWT = "DCJWT"
-	DCENV = "DCENV"
-)
+//统计使用json更快速的json解析器
+var json = jsonIter.ConfigCompatibleWithStandardLibrary
 
 //初始化命令启动参数
 func CmdInit() {
@@ -29,19 +28,19 @@ func CmdInit() {
 		basePath, _ = os.Getwd()
 	}
 	if len(dcEnv) > 0 && strings.Contains("prod|smi|dev|loc", dcEnv) {
-		os.Setenv(DCENV, dcEnv)
+		os.Setenv(core.DCENV, dcEnv)
 	} else {
-		dcEnv = os.Getenv(DCENV)
+		dcEnv = os.Getenv(core.DCENV)
 	}
 	if len(dcJwt) > 0 {
-		os.Setenv(DCJWT, dcJwt)
+		os.Setenv(core.DCJWT, dcJwt)
 	} else {
-		dcJwt = os.Getenv(DCJWT)
+		dcJwt = os.Getenv(core.DCJWT)
 	}
 	if len(dcSrv) > 0 {
-		os.Setenv(DCSRV, dcSrv)
+		os.Setenv(core.DCSRV, dcSrv)
 	} else {
-		dcSrv = os.Getenv(DCSRV)
+		dcSrv = os.Getenv(core.DCSRV)
 	}
 	log.Write(-1, "dcEnv", dcEnv, "dcJwt", dcJwt, "dcSrv", dcSrv, "basePath", basePath)
 }

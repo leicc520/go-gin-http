@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"time"
-
+	
 	"github.com/leicc520/go-orm/cache"
 	"github.com/leicc520/go-orm/log"
 )
@@ -14,6 +14,23 @@ import (
 /**************************************************************************
 	基于http协议的简易服务发现处理逻辑 + 配置加载处理逻辑
  */
+
+type HealthFunc func(srv string) bool
+//默认http我服务检测
+func defHttpZHealth(srv string) bool {
+	client  := http.Client{Timeout: 3*time.Second}
+	sp, err := client.Get("http://"+srv+"/healthz")
+	defer func() {
+		if sp != nil && sp.Body != nil {
+			sp.Body.Close()
+		}
+	}()
+	if err != nil || sp.StatusCode != http.StatusOK {
+		log.Write(log.ERROR, sp, err)
+		return false
+	}
+	return true
+}
 
 type httpRegSevResponse struct {
 	Code int64
@@ -35,7 +52,7 @@ type httpConfigSevResponse struct {
 type HttpMicroRegSrv struct {
 	regSrv string
 	jwtKey string
-	zHealth map[string]zHealthFunc
+	zHealth map[string]HealthFunc
 }
 
 //获取服务器的地址信息
@@ -58,7 +75,7 @@ func (a *HttpMicroRegSrv) Health(nTry int, protoSt, srv string) bool {
 }
 
 //注册心跳处理事件
-func (a *HttpMicroRegSrv) SetHealthFunc(protoSt string, handle zHealthFunc) *HttpMicroRegSrv {
+func (a *HttpMicroRegSrv) SetHealthFunc(protoSt string, handle HealthFunc) *HttpMicroRegSrv {
 	a.zHealth[protoSt] = handle
 	return a
 }

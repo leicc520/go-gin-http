@@ -5,12 +5,13 @@ import (
 	"io/ioutil"
 	"strings"
 	"time"
-
+	
 	"github.com/gin-gonic/gin"
+	jsonIter "github.com/json-iterator/go"
 	"github.com/leicc520/go-gin-http/tracing"
 	"github.com/leicc520/go-orm"
+	"github.com/leicc520/go-orm/cache"
 	"github.com/leicc520/go-orm/log"
-	jsonIter "github.com/json-iterator/go"
 )
 
 const (
@@ -41,6 +42,7 @@ type Application struct {
 	app *gin.Engine
 	baseUrl string
 	config *AppConfigSt
+	regSrv  MicroClient
 	handler []AppStartHandler
 }
 
@@ -58,31 +60,40 @@ func NewApp(config *AppConfigSt) *Application {
 	if strings.ToLower(config.CrossDomain) == "on" {
 		app.app.Use(GINCors()) //跨域的支持集成
 	}
+	app.app.GET("/tracing", handleTracing)
 	app.app.GET("/healthz", func(c *gin.Context) {
 		c.String(200, config.Version)
 	})
-	app.app.GET("/tracing", func(c *gin.Context) {
-		str, jwtStr := "OK", c.Query("sp")
-		if c.Query("s") == "1" && jwtStr == string(gJwtSecret) {
-			jwtStr += "-Open"
-			coConfig.Tracing.SetIsTracing(true)
-		} else if c.Query("s") == "0" && jwtStr == string(gJwtSecret) {
-			jwtStr += "-Close"
-			coConfig.Tracing.SetIsTracing(false)
-		} else {
-			str = "No Change"
-		}
-		c.String(200, str)
-	})
-	app.app.GET("/errlog", func(c *gin.Context) {
-		lStr := "OK"
-		if c.Query("s") == "cc" {
-			lStr = log.ErrorLog()
-		}
-		c.String(200, lStr)
-	})
 	GinValidatorInit("zh")
 	return app
+}
+
+//设置注册的服务发现协议http/grpc
+func (app *Application) SetRegSrv(regSrvHandle MicroRegSrvHandle) *Application {
+	app.regSrv = regSrvHandle("") //默认获取服务信息
+	return app
+}
+
+//申请获取微服务注册的地址信息
+func (app *Application) MicSrvServer(srv, protoSt, name string, cache cache.Cacher) string {
+	srvs, err, ckey := []string{}, errors.New(""), protoSt+"@"+name
+	if srvs, err = app.regSrv.Discover(protoSt, name); err != nil || len(srvs) < 1 {
+		log.Write(log.ERROR, "服务发现地址获取异常{", name, "},通过cache检索")
+		data := cache.Get(ckey)
+		if data != nil {//数据不为空的情况
+			srvs, _ = data.([]string)
+		}
+	} else {//数据获取成功的情况
+		cache.Set(ckey, srvs, 0)
+	}
+	nidx := len(srvs) - 1
+	if nidx > 0 {//大于2条记录做负载均衡
+		nidx = int(time.Now().Unix()) % len(srvs)
+	}
+	if nidx >= 0 {
+		return srvs[nidx]
+	}
+	return ""
 }
 
 //初始化协议http协议
@@ -100,6 +111,12 @@ func (app Application) httpProto() (string, string, bool) {
 		if len(app.config.ImSeg) > 1 {
 			wsStr = "ws://"+app.config.Host+app.config.ImSeg
 		}
+	}
+	//如果设置的开启微服务注册的情况，需要主动注册一下微服务
+	if app.regSrv != nil && len(app.regSrv.GetRegSrv()) < 1 {
+		time.AfterFunc(time.Second*3, func() {
+			app.regSrv.Register(app.config.Name, app.config.Host,"http", app.config.Version)
+		})
 	}
 	app.baseUrl = httpStr
 	return httpStr, wsStr, isSsl
