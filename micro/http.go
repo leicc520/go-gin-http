@@ -17,7 +17,7 @@ import (
 /**************************************************************************
 	基于http协议的简易服务发现处理逻辑 + 配置加载处理逻辑
  */
-func init() {
+func InitMicroHttp() {
 	core.SetRegSrv(func(srv string) core.MicroClient {
 		if len(srv) == 0 {
 			srv = os.Getenv(core.DCSRV)

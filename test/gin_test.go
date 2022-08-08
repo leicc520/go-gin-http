@@ -1,23 +1,26 @@
-package core
+package test
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/leicc520/go-gin-http"
+	"github.com/leicc520/go-gin-http/micro"
 	"github.com/leicc520/go-gin-http/tracing"
 	"github.com/leicc520/go-orm"
 	"testing"
 )
 
 func TestAPP(t *testing.T) {
+	micro.CmdInit(micro.InitMicroHttp) //初始化配置
 	jaeger := tracing.JaegerTracingConfigSt{
 		Agent: "127.0.0.1:6831",
 		Type: "const",
 		Param: 1,
 		IsTrace: true,
 	}
-	config := AppConfigSt{Host: "127.0.0.1:8081", Name: "go.demov5.srv", Domain: "127.0.0.1:8081", Tracing: jaeger}
-
-	NewApp(&config).RegHandler(func(c *gin.Engine) {
+	config := core.AppConfigSt{Host: "127.0.0.1:8081", Name: "go.demov5.srv", Domain: "127.0.0.1:8081", Tracing: jaeger}
+	core.NewApp(&config).RegHandler(func(c *gin.Engine) {
 		c.GET("/demo", func(context *gin.Context) {
 			context.JSON(200, orm.SqlMap{"demo":"test"})
 		})
@@ -26,20 +29,20 @@ func TestAPP(t *testing.T) {
 				Name string `json:"name"`
 				Age  int    `json:"age"`
 			}{}
-			if err := ShouldBind(context, &args); err != nil {
-				PanicValidateHttpError(1001, err)
+			if err := core.ShouldBind(context, &args); err != nil {
+				core.PanicValidateHttpError(1001, err)
 			}
-			NewHttpView(context).JsonDisplay(args)
+			core.NewHttpView(context).JsonDisplay(args)
 		})
 		c.GET("/test", func(context *gin.Context) {
-			req := NewHttpRequest().InjectTrace(context)
+			req := core.NewHttpRequest().InjectTrace(context)
 			sKey := "simlife@123"
-			cryptSt := Crypt{JKey: []byte(sKey)}
+			cryptSt := core.Crypt{JKey: []byte(sKey)}
 			oldStr := "{\"name\":\"leicc\",\"age\":15}"
 			newStr, err := cryptSt.Encrypt([]byte(oldStr))
 			fmt.Println(newStr, err)
 			url := "http://127.0.0.1:8081/demov2"
-			result := req.AddHeader(EncryptKeys, sKey).Request(url, []byte(newStr), "POST")
+			result := req.AddHeader(core.EncryptKeys, sKey).Request(url, []byte(newStr), "POST")
 			var ostr []byte = nil
 			if len(result) > 0 {
 				ostr = cryptSt.Decrypt(result)
@@ -54,18 +57,17 @@ func TestAPP(t *testing.T) {
 }
 
 func TestView(t *testing.T) {
-	view := &HttpView{}
+	view := &core.HttpView{}
 	view.Code = 500
 	view.Msg  = "demo"
 	view.Datas= "demo111"
-
 	str, err := json.Marshal(view)
 	fmt.Println(string(str), err)
 }
 
 func TestCrypt(t *testing.T) {
 	sKey := "simlife@123"
-	cryptSt := Crypt{JKey: []byte(sKey)}
+	cryptSt := core.Crypt{JKey: []byte(sKey)}
 	oldStr := "{\"name\":\"leicc\",\"age\":15}"
 	newStr, err := cryptSt.Encrypt([]byte(oldStr))
 	fmt.Println(newStr, err)
@@ -74,14 +76,14 @@ func TestCrypt(t *testing.T) {
 }
 
 func TestHttpRequest(t *testing.T) {
-	req := NewHttpRequest()
+	req := core.NewHttpRequest()
 	sKey := "simlife@123"
-	cryptSt := Crypt{JKey: []byte(sKey)}
+	cryptSt := core.Crypt{JKey: []byte(sKey)}
 	oldStr := "{\"name\":\"leicc\",\"age\":15}"
 	newStr, err := cryptSt.Encrypt([]byte(oldStr))
 	fmt.Println(newStr, err)
 	url := "http://127.0.0.1:8081/demov2"
-	result := req.AddHeader(EncryptKeys, sKey).Request(url, []byte(newStr), "POST")
+	result := req.AddHeader(core.EncryptKeys, sKey).Request(url, []byte(newStr), "POST")
 	if len(result) > 0 {
 		ostr := cryptSt.Decrypt(result)
 		fmt.Println(string(ostr), "===============")

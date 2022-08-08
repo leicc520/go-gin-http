@@ -15,7 +15,7 @@ import (
 var json = jsonIter.ConfigCompatibleWithStandardLibrary
 
 //初始化命令启动参数
-func CmdInit() {
+func CmdInit(afterFunc func()) {
 	dcEnv, dcJwt, basePath, dcSrv := "", "", "", ""
 	flag.StringVar(&dcEnv,"dcEnv", "", "请输入环境变量(prod|smi|dev|loc)...")
 	flag.StringVar(&dcSrv,"dcSrv", "", "请输入配置中心(http)地址...")
@@ -41,6 +41,9 @@ func CmdInit() {
 		os.Setenv(core.DCSRV, dcSrv)
 	} else {
 		dcSrv = os.Getenv(core.DCSRV)
+	}
+	if afterFunc != nil { //执行初始化完之后回调处理逻辑
+		afterFunc()
 	}
 	log.Write(-1, "dcEnv", dcEnv, "dcJwt", dcJwt, "dcSrv", dcSrv, "basePath", basePath)
 }
