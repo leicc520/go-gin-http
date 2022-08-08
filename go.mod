@@ -12,8 +12,8 @@ require (
 	github.com/go-playground/universal-translator v0.18.0
 	github.com/go-playground/validator/v10 v10.9.0
 	github.com/google/go-cmp v0.5.6 // indirect
-	github.com/json-iterator/go v1.1.9
-	github.com/leicc520/go-orm v1.0.0
+	github.com/json-iterator/go v1.1.12
+	github.com/leicc520/go-orm v1.0.1
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
