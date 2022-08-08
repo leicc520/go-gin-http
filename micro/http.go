@@ -5,8 +5,11 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"strings"
 	"time"
-	
+
+	"github.com/leicc520/go-gin-http"
 	"github.com/leicc520/go-orm/cache"
 	"github.com/leicc520/go-orm/log"
 )
@@ -14,6 +17,21 @@ import (
 /**************************************************************************
 	基于http协议的简易服务发现处理逻辑 + 配置加载处理逻辑
  */
+func init() {
+	core.SetRegSrv(func(srv string) core.MicroClient {
+		if len(srv) == 0 {
+			srv = os.Getenv(core.DCSRV)
+		}
+		//非http请求的地址的情况
+		if !strings.HasPrefix(srv,"http") {
+			srv = "http://"+srv
+		}
+		disSrv := &HttpMicroRegSrv{regSrv: srv, jwtKey: os.Getenv(core.DCJWT),
+			zHealth: map[string]HealthFunc{"http": defHttpZHealth}}
+		log.Write(log.INFO, "register server:{"+srv+"} token:{"+os.Getenv(core.DCJWT)+"}")
+		return core.MicroClient(disSrv)
+	})
+}
 
 type HealthFunc func(srv string) bool
 //默认http我服务检测
@@ -38,8 +56,8 @@ type httpRegSevResponse struct {
 }
 
 type httpDiscoverSevResponse struct {
-	Code int64 	`json:"code"`
-	Msg  string `json:"msg"`
+	Code int64 	  `json:"code"`
+	Msg  string   `json:"msg"`
 	Srvs []string `json:"srvs"`
 }
 
@@ -50,8 +68,8 @@ type httpConfigSevResponse struct {
 }
 
 type HttpMicroRegSrv struct {
-	regSrv string
-	jwtKey string
+	regSrv  string
+	jwtKey  string
 	zHealth map[string]HealthFunc
 }
 

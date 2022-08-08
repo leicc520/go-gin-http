@@ -57,7 +57,7 @@ func (c *Config)LoadFile(confFile string, config interface{}) *Config {
 
 //加载配置 通过配置加载数据
 func (c *Config)LoadAddr(srvAddr string, config interface{}) *Config {
-	data := core.NewMicroRegSrv(srvAddr).Config(c.App.Name)
+	data := core.RegSrvFunc(srvAddr).Config(c.App.Name)
 	//把yaml形式的字符串解析成struct类型
 	if err := yaml.Unmarshal([]byte(data), config); err != nil {
 		log.Write(log.ERROR, "load Config child Parse Failed: ", err)
@@ -71,7 +71,7 @@ func (c *Config)LoadAddr(srvAddr string, config interface{}) *Config {
 
 //通过配置名称加载配置，然后解析到config配置当中
 func (c *Config)LoadConfig(srvAddr, confName string, config interface{}) error {
-	data := core.NewMicroRegSrv(srvAddr).Config(confName)
+	data := core.RegSrvFunc(srvAddr).Config(confName)
 	//把yaml形式的字符串解析成struct类型
 	if err := yaml.Unmarshal([]byte(data), config); err != nil {
 		return err
@@ -81,7 +81,7 @@ func (c *Config)LoadConfig(srvAddr, confName string, config interface{}) error {
 
 //通过远程配置服务器加载
 func (c *Config)LoadDBRemote(dbName string, srvAddr string) {
-	data     := core.NewMicroRegSrv(srvAddr).Config(dbName)
+	data     := core.RegSrvFunc(srvAddr).Config(dbName)
 	dbSlice  := make([]orm.DbConfig, 0)
 	//把yaml形式的字符串解析成struct类型
 	if err := yaml.Unmarshal([]byte(data), &dbSlice); err != nil {
