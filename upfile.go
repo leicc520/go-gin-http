@@ -16,8 +16,8 @@ import (
 //获取相对路径的截取
 func RelativePath(absPath string) string {
 	var baseDir = ""
-	if coConfig != nil { //路径不存在的情况
-		path, err := filepath.Abs(coConfig.UpFileBase)
+	if app != nil && app.config != nil { //路径不存在的情况
+		path, err := filepath.Abs(app.config.UpFileBase)
 		if err != nil {
 			log.Write(log.ERROR, "基础目录获取绝对路径出错 "+err.Error())
 			return absPath
@@ -48,12 +48,12 @@ func FilePathBuild(appdir string, FILE *multipart.FileHeader, subfix string) (st
 		fileName = fmt.Sprintf("%x", md5.Sum([]byte(FILE.Filename)))
 		fileName = time.Now().Format("20060102150405") + fileName[:8]
 	}
-	pathFile, err := filepath.Abs(coConfig.UpFileDir) //上传目录基础路径
+	pathFile, err := filepath.Abs(app.config.UpFileDir) //上传目录基础路径
 	if err != nil {                                   //数据获取为空的情况
-		log.Write(log.ERROR, coConfig.UpFileDir+" 获取绝对路径失败"+err.Error())
+		log.Write(log.ERROR, app.config.UpFileDir+" 获取绝对路径失败"+err.Error())
 		return "", err
 	}
-	if os.Getenv("DCENV") != "prod" { //非生产环境的情况
+	if os.Getenv(DCENV) != "prod" { //非生产环境的情况
 		pathFile = filepath.Join(pathFile, "test")
 	}
 	if ok, err := regexp.MatchString(`^[a-z]+$`, appdir); ok && err == nil {

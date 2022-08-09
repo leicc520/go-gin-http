@@ -38,19 +38,20 @@ type AppConfigSt struct {
 
 type AppStartHandler func(c *gin.Engine)
 type Application struct {
-	app *gin.Engine
+	app    *gin.Engine
 	baseUrl string
 	config *AppConfigSt
 	handler []AppStartHandler
 }
 
-var coConfig *AppConfigSt = nil
-var json = jsonIter.ConfigCompatibleWithStandardLibrary
+var (
+	app *Application = nil
+	json = jsonIter.ConfigCompatibleWithStandardLibrary
+)
 
 //初始化创建一个http服务的情况
 func NewApp(config *AppConfigSt) *Application {
-	coConfig = config
-	app := &Application{app: gin.New(), handler: make([]AppStartHandler, 0), config: config}
+	app = &Application{app: gin.New(), handler: make([]AppStartHandler, 0), config: config}
 	app.app.Use(gin.Logger(), GINRecovery())
 	if config.Tracing.IsTracing() && nil != (&config.Tracing).Init(config.Name) {
 		app.app.Use(GINTracing()) //有配置的话开启链路跟踪
@@ -83,9 +84,9 @@ func (app Application) httpProto() (string, string, bool) {
 		}
 	}
 	//如果设置的开启微服务注册的情况，需要主动注册一下微服务
-	if regSrv != nil && len(regSrv.GetRegSrv()) < 1 {
+	if RegSrv != nil && len(RegSrv.GetRegSrv()) < 1 {
 		time.AfterFunc(time.Second*3, func() {
-			regSrv.Register(app.config.Name, app.config.Host,"http", app.config.Version)
+			RegSrv.Register(app.config.Name, app.config.Host,"http", app.config.Version)
 		})
 	}
 	app.baseUrl = httpStr

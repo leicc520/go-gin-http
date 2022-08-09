@@ -39,12 +39,12 @@ func GINTracing() gin.HandlerFunc {
 //关闭或者开启链路跟踪
 func handleTracing(c *gin.Context) {
 	str, jwtStr := "OK", c.Query("sp")
-	if c.Query("s") == "1" && jwtStr == string(gJwtSecret) {
+	if app != nil && c.Query("s") == "1" && jwtStr == string(gJwtSecret) {
 		jwtStr += "-Open"
-		coConfig.Tracing.SetIsTracing(true)
-	} else if c.Query("s") == "0" && jwtStr == string(gJwtSecret) {
+		app.config.Tracing.SetIsTracing(true)
+	} else if app != nil && c.Query("s") == "0" && jwtStr == string(gJwtSecret) {
 		jwtStr += "-Close"
-		coConfig.Tracing.SetIsTracing(false)
+		app.config.Tracing.SetIsTracing(false)
 	} else {
 		str = "No Change"
 	}

@@ -31,6 +31,8 @@ func (c *Config) Load(confName string, config interface{}) *Config {
 		cache.GFileCacheDir = c.CacheDir
 	}
 	workDir, err := os.Getwd()
+	log.SetLogger(c.Logger.Init())
+	orm.InitDBPoolSt().LoadDbConfig(config) //配置数据库结构注册到数据库调用配置当中
 	log.Write(-1, "workdir {"+workDir+"} cachedir {"+cache.GFileCacheDir+"}", err)
 	return c
 }
