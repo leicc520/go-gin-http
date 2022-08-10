@@ -12,7 +12,9 @@ import (
 )
 
 func TestAPP(t *testing.T) {
-	micro.CmdInit(micro.InitMicroHttp) //初始化配置
+	micro.CmdInit(func() {
+		core.SetRegSrv(micro.NewRegSrvClient)
+	}) //初始化配置
 	jaeger := tracing.JaegerTracingConfigSt{
 		Agent: "127.0.0.1:6831",
 		Type: "const",

@@ -26,13 +26,11 @@ type MicroRegSrvHandle func(srv string) MicroClient
 var (
 	RegSrv     MicroClient  = nil
 	regCache   cache.Cacher = nil
-	RegSrvFunc MicroRegSrvHandle = nil
 )
 
 //设置注册的服务发现协议http/grpc
 func SetRegSrv(regSrvHandle MicroRegSrvHandle) {
-	RegSrvFunc = regSrvHandle
-	RegSrv     = RegSrvFunc("") //默认获取服务信息
+	RegSrv     = regSrvHandle("") //默认获取服务信息
 	regCache   = orm.GetMCache()
 }
 
