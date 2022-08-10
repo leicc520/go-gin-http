@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
+	
+	"github.com/dchest/captcha"
+	"github.com/gin-gonic/gin"
 	"github.com/leicc520/go-orm"
 	"github.com/leicc520/go-orm/cache"
 	"github.com/leicc520/go-orm/log"
-	"github.com/dchest/captcha"
-	"github.com/gin-gonic/gin"
 )
 
 /****************************************************************************************
@@ -125,7 +125,7 @@ func (s *CaptchaSt)CheckHash(c *gin.Context, xStr string) bool {
 	xStr = fmt.Sprintf("%x", md5.Sum([]byte(aStr)))
 	if vStr[0] == xStr[0:5] && vStr[2] == xStr[27:] {
 		sTime, err := strconv.ParseInt(vStr[1], 10, 64)
-		if err == nil && time.Now().Unix()-sTime < 10 {
+		if err == nil && time.Now().Unix()-sTime < 60 {
 			return true
 		}
 	}
