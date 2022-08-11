@@ -55,20 +55,53 @@ func (a *AclSt) SetToken(id int64, loginPw, xToken string, expire int64) string 
 	}
 	oToken := loginPw + "-" + xToken
 	if a.DBSafe != nil {//设置了安全登录的情况
-		a.DBSafe.SetModTable(id).NewOneFromHandler(func(st *orm.QuerySt) *orm.QuerySt {
-			st.Value("tocken", xToken).Value("loginpw", loginPw)
-			st.Value("userid", id).Value("sys", a.Sys).Value("expire", expire)
-			return st
-		}, func(st *orm.QuerySt) interface{} {
-			st.Duplicate("tocken", xToken).Duplicate("loginpw", loginPw).Duplicate("expire", expire)
-			return nil
-		})
+		if a.DBSafe.Query().GetDriver() == "sqlite3" {
+			a.sqliteAdapter(id, loginPw, xToken, expire)
+		} else {
+			a.mysqlAdapter(id, loginPw, xToken, expire)
+		}
 	}
 	oToken = fmt.Sprintf("%x", md5.Sum([]byte(oToken)))
 	if orm.GdbCache != nil { //设置缓存处理逻辑
 		orm.GdbCache.Set(a.Skey(id), oToken, expire)
 	}
 	return oToken
+}
+
+//sqlite3 引擎的更新语句处理逻辑
+func (a *AclSt) sqliteAdapter(id int64, loginPw, xToken string, expire int64)  {
+	a.DBSafe.SetModTable(id)
+	nSize := a.DBSafe.GetTotal(func(st *orm.QuerySt) string {
+		st.Where("userid", id).Where("sys", a.Sys)
+		return st.GetWheres()
+	}, "COUNT(1)").ToInt64()
+	if nSize > 0 {
+		a.DBSafe.MultiUpdate(func(st *orm.QuerySt) string {
+			st.Where("userid", id).Where("sys", a.Sys)
+			return st.GetWheres()
+		}, func(st *orm.QuerySt) *orm.QuerySt {
+			st.Value("tocken", xToken).Value("loginpw", loginPw).Value("expire", expire)
+			return st
+		})
+	} else {
+		a.DBSafe.NewOneFromHandler(func(st *orm.QuerySt) *orm.QuerySt {
+			st.Value("tocken", xToken).Value("loginpw", loginPw)
+			st.Value("userid", id).Value("sys", a.Sys).Value("expire", expire)
+			return st
+		}, nil)
+	}
+}
+
+//语句处理逻辑mysql|pgsql等等
+func (a *AclSt) mysqlAdapter(id int64, loginPw, xToken string, expire int64) {
+	a.DBSafe.SetModTable(id).NewOneFromHandler(func(st *orm.QuerySt) *orm.QuerySt {
+		st.Value("tocken", xToken).Value("loginpw", loginPw)
+		st.Value("userid", id).Value("sys", a.Sys).Value("expire", expire)
+		return st
+	}, func(st *orm.QuerySt) interface{} {
+		st.Duplicate("tocken", xToken).Duplicate("loginpw", loginPw).Duplicate("expire", expire)
+		return nil
+	})
 }
 
 //获取请求加密的token
