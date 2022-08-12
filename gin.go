@@ -100,7 +100,7 @@ func (app *Application) release()  {
 	fmt.Println("==============释放资源退出=================")
 	orm.GdbPoolSt.Release()
 	if RegSrv != nil && len(RegSrv.GetRegSrv()) > 1 {
-		RegSrv.UnRegister(app.srvHost, app.config.Name, "http")
+		RegSrv.UnRegister("http", app.config.Name, app.srvHost)
 	}
 }
 
