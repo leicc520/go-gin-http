@@ -12,7 +12,7 @@ func (app *Application) Start() {
 			handle(app.app)
 		}
 	}
-	WritePidFile(app.config.Name) //写入进程pid数据资料信息
+	orm.WritePidFile(app.config.Name) //写入进程pid数据资料信息
  	httpStr, wsStr, isSsl := app.httpProto()
 	log.Write(-1, "=======================start app linux=====================")
 	log.Write(-1, "===http server{", httpStr, "} jwt={", string(gJwtSecret), "}")
