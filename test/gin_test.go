@@ -21,7 +21,7 @@ func TestAPP(t *testing.T) {
 		Param: 1,
 		IsTrace: true,
 	}
-	config := core.AppConfigSt{Host: "127.0.0.1:8081", Name: "go.demov5.srv", Domain: "127.0.0.1:8081", Tracing: jaeger}
+	config := core.AppConfigSt{Host: "127.0.0.1:8081", Name: "go.demov5.srv", Version: "v1.0.0", Domain: "127.0.0.1:8081", Tracing: jaeger}
 	core.NewApp(&config).RegHandler(func(c *gin.Engine) {
 		c.GET("/demo", func(context *gin.Context) {
 			context.JSON(200, orm.SqlMap{"demo":"test"})

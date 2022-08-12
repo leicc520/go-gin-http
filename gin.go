@@ -84,7 +84,7 @@ func (app Application) httpProto() (string, string, bool) {
 		}
 	}
 	//如果设置的开启微服务注册的情况，需要主动注册一下微服务
-	if RegSrv != nil && len(RegSrv.GetRegSrv()) < 1 {
+	if RegSrv != nil && len(RegSrv.GetRegSrv()) > 1 {
 		time.AfterFunc(time.Second*3, func() {
 			RegSrv.Register(app.config.Name, app.config.Host,"http", app.config.Version)
 		})
