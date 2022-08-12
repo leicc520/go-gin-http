@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/fvbock/endless"
+	"github.com/leicc520/go-orm"
 	"github.com/leicc520/go-orm/log"
 )
 
