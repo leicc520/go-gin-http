@@ -18,6 +18,7 @@ func (app *Application) Start() {
 		log.Write(-1, "===websocket server{", wsStr, "}")
 	}
 	log.Write(-1, "============================================================")
+	defer app.release() //退出释放
 	if isSsl {//针对https 热更新的处理逻辑
 		if err := app.app.RunTLS(app.config.Host, app.config.CertFile, app.config.KeyFile); err != nil {
 			log.Write(log.FATAL, "start app failed:"+err.Error())

@@ -21,6 +21,7 @@ func (app *Application) Start() {
 	}
 	log.Write(-1, "===========================================================")
 	endSrv := endless.NewServer(app.config.Host, app.app)
+	defer app.release() //退出释放
 	if isSsl {//针对https 热更新的处理逻辑
 		if err := endSrv.ListenAndServeTLS(app.config.CertFile, app.config.KeyFile); err != nil {
 			log.Write(-1, "start app failed:"+err.Error())

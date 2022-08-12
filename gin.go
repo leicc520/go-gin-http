@@ -2,6 +2,7 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -40,6 +41,7 @@ type AppStartHandler func(c *gin.Engine)
 type Application struct {
 	app    *gin.Engine
 	baseUrl string
+	srvHost string
 	config *AppConfigSt
 	handler []AppStartHandler
 }
@@ -68,7 +70,7 @@ func NewApp(config *AppConfigSt) *Application {
 }
 
 //初始化协议http协议
-func (app Application) httpProto() (string, string, bool) {
+func (app *Application) httpProto() (string, string, bool) {
 	httpStr, wsStr, isSsl := "", "", false
 	isSsl = strings.HasPrefix(strings.ToLower(app.config.Ssl), "on")
 	if isSsl && orm.FileExists(app.config.KeyFile) && orm.FileExists(app.config.KeyFile) {
@@ -86,11 +88,20 @@ func (app Application) httpProto() (string, string, bool) {
 	//如果设置的开启微服务注册的情况，需要主动注册一下微服务
 	if RegSrv != nil && len(RegSrv.GetRegSrv()) > 1 {
 		time.AfterFunc(time.Second*3, func() {
-			RegSrv.Register(app.config.Name, app.config.Host,"http", app.config.Version)
+			app.srvHost = RegSrv.Register(app.config.Name, app.config.Host,"http", app.config.Version)
 		})
 	}
 	app.baseUrl = httpStr
 	return httpStr, wsStr, isSsl
+}
+
+//释放资源处理逻辑业务 服务注销等等
+func (app *Application) release()  {
+	fmt.Println("==============释放资源退出=================")
+	orm.GdbPoolSt.Release()
+	if RegSrv != nil && len(RegSrv.GetRegSrv()) > 1 {
+		RegSrv.UnRegister(app.srvHost, app.config.Name, "http")
+	}
 }
 
 //注册预先要执行的业务动作处理逻辑

@@ -12,6 +12,9 @@ import (
 )
 
 func TestAPP(t *testing.T) {
+	defer func() {
+		fmt.Println("-----------------")
+	}()
 	micro.CmdInit(func() {
 		core.SetRegSrv(micro.NewRegSrvClient)
 	}) //初始化配置
