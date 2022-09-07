@@ -6,10 +6,9 @@ import (
 	"io/ioutil"
 	"strings"
 	"time"
-	
+
 	"github.com/gin-gonic/gin"
 	jsonIter "github.com/json-iterator/go"
-	"github.com/leicc520/go-gin-http/tracing"
 	"github.com/leicc520/go-orm"
 	"github.com/leicc520/go-orm/log"
 )
@@ -32,7 +31,7 @@ type AppConfigSt struct {
 	CertFile 	string 	`yaml:"certFile"`
 	KeyFile 	string 	`yaml:"keyFile"`
 	CrossDomain string 	`yaml:"crossDomain"`
-	Tracing 	tracing.JaegerTracingConfigSt `yaml:"tracing"`
+
 	UpFileDir 	string 	`yaml:"upfileDir"`
 	UpFileBase  string 	`yaml:"upfileBase"`
 }
@@ -55,13 +54,15 @@ var (
 func NewApp(config *AppConfigSt) *Application {
 	app = &Application{app: gin.New(), handler: make([]AppStartHandler, 0), config: config}
 	app.app.Use(gin.Logger(), GINRecovery())
-	if config.Tracing.IsTracing() && nil != (&config.Tracing).Init(config.Name) {
+	if STracingConfig != nil && STracingConfig.IsTracing() && nil != STracingConfig.Init(config.Name) {
 		app.app.Use(GINTracing()) //有配置的话开启链路跟踪
 	}
 	if strings.ToLower(config.CrossDomain) == "on" {
 		app.app.Use(GINCors()) //跨域的支持集成
 	}
-	app.app.GET("/tracing", handleTracing)
+	if STracingConfig != nil {//监控修正
+		app.app.GET("/tracing", handleTracing)
+	}
 	app.app.GET("/healthz", func(c *gin.Context) {
 		c.String(200, config.Version)
 	})

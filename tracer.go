@@ -8,6 +8,13 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 )
 
+var STracingConfig *tracing.JaegerTracingConfigSt = nil
+
+//注入链路跟踪处理逻辑
+func InjectTracing(tracingConfig *tracing.JaegerTracingConfigSt) {
+	STracingConfig = tracingConfig
+}
+
 //链路追踪中间件处理逻辑
 func GINTracing() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -41,10 +48,10 @@ func handleTracing(c *gin.Context) {
 	str, jwtStr := "OK", c.Query("sp")
 	if app != nil && c.Query("s") == "1" && jwtStr == string(gJwtSecret) {
 		jwtStr += "-Open"
-		app.config.Tracing.SetIsTracing(true)
+		STracingConfig.SetIsTracing(true)
 	} else if app != nil && c.Query("s") == "0" && jwtStr == string(gJwtSecret) {
 		jwtStr += "-Close"
-		app.config.Tracing.SetIsTracing(false)
+		STracingConfig.SetIsTracing(false)
 	} else {
 		str = "No Change"
 	}

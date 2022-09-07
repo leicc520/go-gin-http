@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/leicc520/go-gin-http"
 	"github.com/leicc520/go-gin-http/micro"
-	"github.com/leicc520/go-gin-http/tracing"
 	"github.com/leicc520/go-orm"
 	"testing"
 )
@@ -16,15 +15,17 @@ func TestAPP(t *testing.T) {
 		fmt.Println("-----------------")
 	}()
 	micro.CmdInit(func() {
-		core.SetRegSrv(micro.NewRegSrvClient)
+	//	core.SetRegSrv(micro.NewRegSrvClient)
 	}) //初始化配置
+	/*
 	jaeger := tracing.JaegerTracingConfigSt{
 		Agent: "127.0.0.1:6831",
 		Type: "const",
 		Param: 1,
 		IsTrace: true,
 	}
-	config := core.AppConfigSt{Host: "127.0.0.1:8081", Name: "go.demov5.srv", Version: "v1.0.0", Domain: "127.0.0.1:8081", Tracing: jaeger}
+	core.InjectTracing(&jaeger)*/
+	config := core.AppConfigSt{Host: "127.0.0.1:8081", Name: "go.demov5.srv", Version: "v1.0.0", Domain: "127.0.0.1:8081"}
 	core.NewApp(&config).RegHandler(func(c *gin.Engine) {
 		c.GET("/demo", func(context *gin.Context) {
 			context.JSON(200, orm.SqlMap{"demo":"test"})
