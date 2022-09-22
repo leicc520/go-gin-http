@@ -3,6 +3,8 @@ package micro
 import (
 	"io/ioutil"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/leicc520/go-gin-http"
 	"github.com/leicc520/go-orm"
@@ -46,11 +48,29 @@ func LoadFile(confFile string, config interface{}) ([]byte, error) {
 		return nil, err
 	}
 	data, _ := ioutil.ReadFile(confFile)
+	data  = []byte(envYamlReplace(string(data))) //检测环境变量替换
 	//把yaml形式的字符串解析成struct类型 先子类初始化
 	if err := yaml.Unmarshal(data, config); err != nil {
 		return nil, err
 	}
 	return 	data, nil
+}
+
+//检测yaml文件内容，替换环境变量
+func envYamlReplace(str string) string {
+	regEnv, _ := regexp.Compile("\\${[\\s]*([0-9A-Za-z]+)[\\s]*}")
+	arrItems := regEnv.FindAllStringSubmatch(str, -1)
+	if arrItems == nil || len(arrItems) < 1 {
+		return str
+	}
+	for _, aStr := range arrItems {
+		if len(aStr) != 2 {
+			continue
+		}
+		envStr := os.Getenv(aStr[1]) //获取环境变量Key信息
+		str = strings.Replace(str, aStr[0], envStr, -1)
+	}
+	return str
 }
 
 //加载配置 数据资料信息
@@ -80,6 +100,7 @@ func (c *Config)LoadAddr(srvAddr string, config interface{}) *Config {
 //通过配置名称加载配置，然后解析到config配置当中
 func LoadAddr(srvAddr, appName string, config interface{}) (string, error) {
 	data := NewRegSrvClient(srvAddr).Config(appName)
+	data  = envYamlReplace(data) //检测环境变量替换
 	//把yaml形式的字符串解析成struct类型
 	if err := yaml.Unmarshal([]byte(data), config); err != nil {
 		return "", err
