@@ -9,11 +9,11 @@ import (
 func TestConfig(t *testing.T) {
 	str := `
 		aaa:${env}
-		bbb:${ demo }
+		bbb:${ de_mo }
 		ccc:${string}
 `
 	os.Setenv("env", "env-test")
-	os.Setenv("demo", "demo-test")
+	os.Setenv("de_mo", "demo-test")
 	os.Setenv("string", "string-test")
 
 	aaa := envYamlReplace(str)

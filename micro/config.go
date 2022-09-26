@@ -58,7 +58,7 @@ func LoadFile(confFile string, config interface{}) ([]byte, error) {
 
 //检测yaml文件内容，替换环境变量
 func envYamlReplace(str string) string {
-	regEnv, _ := regexp.Compile("\\${[\\s]*([0-9A-Za-z]+)[\\s]*}")
+	regEnv, _ := regexp.Compile("\\${[\\s]*([^}]+)[\\s]*}")
 	arrItems := regEnv.FindAllStringSubmatch(str, -1)
 	if arrItems == nil || len(arrItems) < 1 {
 		return str
@@ -67,7 +67,7 @@ func envYamlReplace(str string) string {
 		if len(aStr) != 2 {
 			continue
 		}
-		envStr := os.Getenv(aStr[1]) //获取环境变量Key信息
+		envStr := os.Getenv(strings.TrimSpace(aStr[1])) //获取环境变量Key信息
 		str = strings.Replace(str, aStr[0], envStr, -1)
 	}
 	return str
