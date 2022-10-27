@@ -2,9 +2,10 @@ package queue
 
 import (
 	"errors"
+	"time"
+
 	"github.com/Shopify/sarama"
 	"github.com/leicc520/go-orm/log"
-	"time"
 )
 
 // 更新数据资料信息
