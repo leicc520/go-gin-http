@@ -3,7 +3,7 @@ module github.com/leicc520/go-gin-http
 go 1.16
 
 require (
-	git.ziniao.com/webscraper/scraper-task v1.0.0
+	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
 	github.com/PuerkitoBio/goquery v1.8.0
 	github.com/Shopify/sarama v1.37.2
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.5+incompatible
@@ -22,8 +22,10 @@ require (
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/rabbitmq/amqp091-go v1.5.0
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
+	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
 	github.com/xdg-go/scram v1.1.1
 	github.com/xuri/excelize/v2 v2.6.1
+	go.uber.org/atomic v1.10.0 // indirect
 	golang.org/x/net v0.0.0-20221014081412-f15817d10f9b
 	golang.org/x/text v0.3.7
 	gopkg.in/yaml.v2 v2.4.0

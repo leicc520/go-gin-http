@@ -1,8 +1,8 @@
 package parse
 
 import (
-	"git.ziniao.com/webscraper/scraper-task/lib"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/leicc520/go-gin-http"
 	"strings"
 )
 
@@ -22,7 +22,7 @@ func NewQueryParse(htmlStr string) (*QueryParseSt, error) {
 
 //通过文件获取解析器的逻辑
 func NewQueryParseFromFile(file string) (*QueryParseSt, error) {
-	htmlStr := lib.ReadFile(file)
+	htmlStr := core.ReadFile(file)
 	return NewQueryParse(htmlStr)
 }
 
@@ -56,12 +56,11 @@ func (s *QueryParseSt) InnerTexts(expr string) (texts []string, err error) {
 		err = ErrNoExists
 		return
 	}
-	texts  = make([]string, 0)
+	texts = make([]string, 0)
 	sel.Find("*").RemoveFiltered("style,noscript,script")
-	f   := func(_ int, tmpSel *goquery.Selection) string {
+	f := func(_ int, tmpSel *goquery.Selection) string {
 		return strings.TrimSpace(tmpSel.Text())
 	}
 	texts = sel.Map(f)
 	return
 }
-

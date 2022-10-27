@@ -2,7 +2,7 @@ package parser
 
 import (
 	"fmt"
-	"git.ziniao.com/webscraper/scraper-task/lib/proxy"
+	"github.com/leicc520/go-gin-http/proxy"
 	"io/ioutil"
 	"os"
 	"path/filepath"

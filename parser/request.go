@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"git.ziniao.com/webscraper/scraper-task/lib"
-	"git.ziniao.com/webscraper/scraper-task/lib/proxy"
+	"github.com/leicc520/go-gin-http"
+	"github.com/leicc520/go-gin-http/proxy"
 	"github.com/leicc520/go-orm/cache"
 )
 
@@ -48,7 +48,7 @@ func Inject(sCache cache.Cacher, sMonitor *proxy.Monitor) {
 
 // 获取缓存策略的key
 func (r *BaseRequest) CacheKey(uri *url.URL) string {
-	return uri.Host + "@" + lib.Md5Str(uri.String())
+	return uri.Host + "@" + core.Md5Str(uri.String())
 }
 
 // 通过缓存获取数据
@@ -106,7 +106,7 @@ func (r *BaseRequest) Do(client *proxy.HttpSt, link string, expire int64) (strin
 		return result, ckey, err
 	}
 	if !r.isRegUrl() { //地址不匹配的情况
-		lib.LogActionOnce("url@"+lib.Md5Str(link), 86400, r.RegUrl, r.Url)
+		core.LogActionOnce("url@"+core.Md5Str(link), 86400, r.RegUrl, r.Url)
 		return "", "", errors.New("地址模式不匹配:" + r.Url)
 	}
 	if client == nil { //不传的话 使用默认
@@ -119,7 +119,7 @@ func (r *BaseRequest) Do(client *proxy.HttpSt, link string, expire int64) (strin
 	result, err = client.Request(r.Url, []byte(r.Params), r.Method)
 	//返回的内容检测不到关键词，记录异常
 	if err == nil && len(result) > 0 && !r.isRegMatch(result) {
-		lib.LogActionOnce("web@"+lib.Md5Str(link), 86400, result)
+		core.LogActionOnce("web@"+core.Md5Str(link), 86400, result)
 		err = errUnknownPage
 	}
 	if err == nil && len(result) > 0 && mCache != nil { //爬取到内容了

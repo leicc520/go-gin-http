@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"git.ziniao.com/webscraper/scraper-task/lib"
+	"github.com/leicc520/go-gin-http"
 	"github.com/leicc520/go-orm"
 	"github.com/leicc520/go-orm/log"
 )
@@ -133,7 +133,7 @@ func (s ElementSt) getValue(t IFCompiler) (value interface{}, err error) {
 		}
 	}
 	result := convertString(value)
-	summary := lib.CutStr(result, 64, "...")
+	summary := core.CutStr(result, 64, "...")
 	log.Write(log.INFO, s.String(), summary)
 	return
 }
@@ -141,7 +141,7 @@ func (s ElementSt) getValue(t IFCompiler) (value interface{}, err error) {
 // 针对字符串内容的过滤处理逻辑
 func (s ElementSt) regStrFilter(value string, reg *regexp.Regexp) (interface{}, error) {
 	var err error = nil
-	value = lib.StripTags(value)
+	value = core.StripTags(value)
 	if s.MatchIdx == "-1" { //默认直接返回即可
 		str := reg.FindString(value)
 		if len(str) < 1 {

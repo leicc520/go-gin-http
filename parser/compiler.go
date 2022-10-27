@@ -3,9 +3,9 @@ package parser
 import (
 	"errors"
 
-	"git.ziniao.com/webscraper/scraper-task/lib/proxy"
-	"git.ziniao.com/webscraper/scraper-task/lib"
-	"git.ziniao.com/webscraper/scraper-task/lib/parser/parse"
+	"github.com/leicc520/go-gin-http"
+	"github.com/leicc520/go-gin-http/parser/parse"
+	"github.com/leicc520/go-gin-http/proxy"
 	"github.com/leicc520/go-orm"
 	"github.com/leicc520/go-orm/log"
 )
@@ -57,8 +57,8 @@ func (s *CompilerSt) Parse(link string, elements []parse.ElementSt) (result orm.
 	//如果数据不为空的情况 直接返回空数据信息
 	if !s.ParseErr.IsEmpty() { //解析结果有异常的记录日志
 		var ckey = ""
-		err, ckey = s.ParseErr, "parser@"+lib.Md5Str(s.ParseErr.Error())
-		lib.LogActionOnce(ckey, 86400, err, link, s.DocHtml)
+		err, ckey = s.ParseErr, "parser@"+core.Md5Str(s.ParseErr.Error())
+		core.LogActionOnce(ckey, 86400, err, link, s.DocHtml)
 	}
 	return
 }
