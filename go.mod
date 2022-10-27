@@ -6,6 +6,7 @@ require (
 	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
 	github.com/PuerkitoBio/goquery v1.8.0
 	github.com/Shopify/sarama v1.37.2
+	github.com/aliyun/aliyun-log-go-sdk v0.1.38
 	github.com/aliyun/aliyun-oss-go-sdk v2.2.5+incompatible
 	github.com/antchfx/htmlquery v1.2.5
 	github.com/antchfx/jsonquery v1.3.0
@@ -28,5 +29,6 @@ require (
 	go.uber.org/atomic v1.10.0 // indirect
 	golang.org/x/net v0.0.0-20221014081412-f15817d10f9b
 	golang.org/x/text v0.3.7
+	google.golang.org/protobuf v1.28.1
 	gopkg.in/yaml.v2 v2.4.0
 )
