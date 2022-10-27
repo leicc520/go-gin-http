@@ -3,7 +3,7 @@ package proxy
 import (
 	"time"
 
-	"git.ziniao.com/webscraper/scraper-task/lib/proxy/channal"
+	"github.com/leicc520/go-gin-http/proxy/channal"
 	"github.com/leicc520/go-orm/log"
 )
 

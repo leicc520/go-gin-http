@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"git.ziniao.com/webscraper/scraper-task/lib/locker"
+	"github.com/leicc520/go-gin-http/locker"
 	"github.com/leicc520/go-orm/log"
 )
 
