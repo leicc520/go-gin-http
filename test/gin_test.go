@@ -3,10 +3,10 @@ package test
 import (
 	"encoding/json"
 	"fmt"
+	"git.ziniao.com/webscraper/go-gin-http"
+	"git.ziniao.com/webscraper/go-gin-http/micro"
+	"git.ziniao.com/webscraper/go-orm"
 	"github.com/gin-gonic/gin"
-	"github.com/leicc520/go-gin-http"
-	"github.com/leicc520/go-gin-http/micro"
-	"github.com/leicc520/go-orm"
 	"testing"
 )
 
@@ -15,20 +15,20 @@ func TestAPP(t *testing.T) {
 		fmt.Println("-----------------")
 	}()
 	micro.CmdInit(func() {
-	//	core.SetRegSrv(micro.NewRegSrvClient)
+		//	core.SetRegSrv(micro.NewRegSrvClient)
 	}) //初始化配置
 	/*
-	jaeger := tracing.JaegerTracingConfigSt{
-		Agent: "127.0.0.1:6831",
-		Type: "const",
-		Param: 1,
-		IsTrace: true,
-	}
-	core.InjectTracing(&jaeger)*/
+		jaeger := tracing.JaegerTracingConfigSt{
+			Agent: "127.0.0.1:6831",
+			Type: "const",
+			Param: 1,
+			IsTrace: true,
+		}
+		core.InjectTracing(&jaeger)*/
 	config := core.AppConfigSt{Host: "127.0.0.1:8081", Name: "go.demov5.srv", Version: "v1.0.0", Domain: "127.0.0.1:8081"}
 	core.NewApp(&config).RegHandler(func(c *gin.Engine) {
 		c.GET("/demo", func(context *gin.Context) {
-			context.JSON(200, orm.SqlMap{"demo":"test"})
+			context.JSON(200, orm.SqlMap{"demo": "test"})
 		})
 		c.POST("/demov2", func(context *gin.Context) {
 			args := struct {
@@ -57,7 +57,7 @@ func TestAPP(t *testing.T) {
 			urlv2 := "http://127.0.0.1:8081/demo"
 			result = req.Reset().Request(urlv2, nil, "GET")
 			fmt.Println(string(result), "===============")
-			context.JSON(200, orm.SqlMap{"demov2":string(ostr), "demo":string(result)})
+			context.JSON(200, orm.SqlMap{"demov2": string(ostr), "demo": string(result)})
 		})
 	}).Start()
 }
@@ -65,8 +65,8 @@ func TestAPP(t *testing.T) {
 func TestView(t *testing.T) {
 	view := &core.HttpView{}
 	view.Code = 500
-	view.Msg  = "demo"
-	view.Datas= "demo111"
+	view.Msg = "demo"
+	view.Datas = "demo111"
 	str, err := json.Marshal(view)
 	fmt.Println(string(str), err)
 }

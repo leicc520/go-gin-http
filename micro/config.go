@@ -1,16 +1,16 @@
 package micro
 
 import (
+	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
-	"github.com/leicc520/go-gin-http"
-	"github.com/leicc520/go-orm"
-	"github.com/leicc520/go-orm/cache"
-	"github.com/leicc520/go-orm/log"
-	"gopkg.in/yaml.v2"
+	"git.ziniao.com/webscraper/go-gin-http"
+	"git.ziniao.com/webscraper/go-orm"
+	"git.ziniao.com/webscraper/go-orm/cache"
+	"git.ziniao.com/webscraper/go-orm/log"
 )
 
 type Config struct {

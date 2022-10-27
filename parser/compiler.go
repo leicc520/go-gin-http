@@ -3,11 +3,11 @@ package parser
 import (
 	"errors"
 
-	"github.com/leicc520/go-gin-http"
-	"github.com/leicc520/go-gin-http/parser/parse"
-	"github.com/leicc520/go-gin-http/proxy"
-	"github.com/leicc520/go-orm"
-	"github.com/leicc520/go-orm/log"
+	"git.ziniao.com/webscraper/go-gin-http"
+	"git.ziniao.com/webscraper/go-gin-http/parser/parse"
+	"git.ziniao.com/webscraper/go-gin-http/proxy"
+	"git.ziniao.com/webscraper/go-orm"
+	"git.ziniao.com/webscraper/go-orm/log"
 )
 
 // 获取模板配置数据资料信息

@@ -1,8 +1,9 @@
-module github.com/leicc520/go-gin-http
+module git.ziniao.com/webscraper/go-gin-http
 
 go 1.16
 
 require (
+	git.ziniao.com/webscraper/go-orm v1.1.0
 	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
 	github.com/PuerkitoBio/goquery v1.8.0
 	github.com/Shopify/sarama v1.37.2
@@ -19,7 +20,6 @@ require (
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/json-iterator/go v1.1.12
-	github.com/leicc520/go-orm v1.0.84
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/rabbitmq/amqp091-go v1.5.0
 	github.com/uber/jaeger-client-go v2.30.0+incompatible
@@ -30,5 +30,5 @@ require (
 	golang.org/x/net v0.0.0-20221014081412-f15817d10f9b
 	golang.org/x/text v0.3.7
 	google.golang.org/protobuf v1.28.1
-	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

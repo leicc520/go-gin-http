@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leicc520/go-orm/log"
+	"git.ziniao.com/webscraper/go-orm/log"
 )
 
-//获取相对路径的截取
+// 获取相对路径的截取
 func RelativePath(absPath string) string {
 	var baseDir = ""
 	if app != nil && app.config != nil { //路径不存在的情况
@@ -34,7 +34,7 @@ func RelativePath(absPath string) string {
 	return absPath
 }
 
-//获取上传目录的文件
+// 获取上传目录的文件
 func FilePathBuild(appdir string, FILE *multipart.FileHeader, subfix string) (string, error) {
 	var fileName string = ""
 	if fp, err := FILE.Open(); err == nil { //读取内容做hash
@@ -49,7 +49,7 @@ func FilePathBuild(appdir string, FILE *multipart.FileHeader, subfix string) (st
 		fileName = time.Now().Format("20060102150405") + fileName[:8]
 	}
 	pathFile, err := filepath.Abs(app.config.UpFileDir) //上传目录基础路径
-	if err != nil {                                   //数据获取为空的情况
+	if err != nil {                                     //数据获取为空的情况
 		log.Write(log.ERROR, app.config.UpFileDir+" 获取绝对路径失败"+err.Error())
 		return "", err
 	}

@@ -1,15 +1,15 @@
 package reader
 
 import (
-	"github.com/leicc520/go-orm/log"
+	"git.ziniao.com/webscraper/go-orm/log"
 	"github.com/xuri/excelize/v2"
 )
 
 type ExcelReaderSt struct {
-	file 	string
-	sheet   string
-	fp   *excelize.File
-	rows *excelize.Rows
+	file  string
+	sheet string
+	fp    *excelize.File
+	rows  *excelize.Rows
 }
 
 //创建读取csv格式数据
@@ -19,12 +19,12 @@ func NewExcelReader(file string) *ExcelReaderSt {
 		log.Write(-1, "打开文件失败", file)
 	}
 	sheets := fp.GetSheetList()
-	if len(sheets) < 1 {//页面为空的情况
+	if len(sheets) < 1 { //页面为空的情况
 		fp.Close()
 		fp = nil
 	}
 	//默认取第一个页面的数据
-	return &ExcelReaderSt{file:file, fp: fp, sheet: sheets[0]}
+	return &ExcelReaderSt{file: file, fp: fp, sheet: sheets[0]}
 }
 
 //关闭链接句柄的处理逻辑

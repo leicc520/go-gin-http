@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/leicc520/go-gin-http/locker"
-	"github.com/leicc520/go-orm/log"
+	"git.ziniao.com/webscraper/go-gin-http/locker"
+	"git.ziniao.com/webscraper/go-orm/log"
 )
 
 type proxyHandleSt func(proto string, proxy IFProxy) error

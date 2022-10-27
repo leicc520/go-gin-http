@@ -5,13 +5,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/leicc520/go-orm/log"
+	"git.ziniao.com/webscraper/go-orm/log"
 )
 
 type CsvReaderSt struct {
-	file 	string
-	fp   	*os.File
-	reader 	*bufio.Reader
+	file   string
+	fp     *os.File
+	reader *bufio.Reader
 }
 
 //创建读取csv格式数据
@@ -23,7 +23,7 @@ func NewCsvReader(file string) *CsvReaderSt {
 	} else {
 		reader = bufio.NewReader(fp)
 	}
-	return &CsvReaderSt{file:file, fp: fp, reader: reader}
+	return &CsvReaderSt{file: file, fp: fp, reader: reader}
 }
 
 //关闭链接句柄的处理逻辑
@@ -40,8 +40,8 @@ func (s *CsvReaderSt) ReadRow() []string {
 		return nil
 	}
 	line, _, err := s.reader.ReadLine()
-	if err != nil {//结束
+	if err != nil { //结束
 		return nil
 	}
-	return strings.Split(string(line),",")
+	return strings.Split(string(line), ",")
 }

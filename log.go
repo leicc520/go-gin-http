@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leicc520/go-orm"
+	"git.ziniao.com/webscraper/go-orm"
 )
 
 var (

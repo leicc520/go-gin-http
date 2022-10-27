@@ -4,12 +4,12 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
-	"github.com/leicc520/go-orm"
 	"strings"
 	"time"
 
+	"git.ziniao.com/webscraper/go-orm"
+	"git.ziniao.com/webscraper/go-orm/log"
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/leicc520/go-orm/log"
 )
 
 type AliOssSt struct {

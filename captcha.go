@@ -8,15 +8,16 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	
+
+	"git.ziniao.com/webscraper/go-orm"
+	"git.ziniao.com/webscraper/go-orm/cache"
+	"git.ziniao.com/webscraper/go-orm/log"
 	"github.com/dchest/captcha"
 	"github.com/gin-gonic/gin"
-	"github.com/leicc520/go-orm"
-	"github.com/leicc520/go-orm/cache"
-	"github.com/leicc520/go-orm/log"
 )
 
-/****************************************************************************************
+/*
+***************************************************************************************
 这里默认使用内存存储验证码的信息，分布式部署的时候可以切换到redis，否则可能验证有问题.
 */
 type MemStore struct {
@@ -27,10 +28,11 @@ type CaptchaSt struct {
 }
 
 const CapCookie = "_cap"
+
 var Gcaptcha *CaptchaSt = nil
 
-//延迟执行获取验证码存储的初始化
-func NewInitCap()  {
+// 延迟执行获取验证码存储的初始化
+func NewInitCap() {
 	Gcaptcha = &CaptchaSt{}
 	time.AfterFunc(time.Second*3, func() {
 		store := &MemStore{Store: orm.GdbCache}
@@ -39,7 +41,7 @@ func NewInitCap()  {
 	})
 }
 
-//设置验证的缓存默认1小时过期
+// 设置验证的缓存默认1小时过期
 func (c *MemStore) Set(id string, digits []byte) {
 	c.Store.Set("captcha@"+id, string(digits), 3600)
 }
@@ -55,7 +57,7 @@ func (c *MemStore) Get(id string, clear bool) []byte {
 	return nil
 }
 
-//生成验证码的处理逻辑
+// 生成验证码的处理逻辑
 func (s *CaptchaSt) Serve(w http.ResponseWriter, r *http.Request, id, ext, lang string, download bool, width, height int) error {
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	w.Header().Set("Pragma", "no-cache")
@@ -79,7 +81,7 @@ func (s *CaptchaSt) Serve(w http.ResponseWriter, r *http.Request, id, ext, lang 
 	return nil
 }
 
-func (s *CaptchaSt)CheckCaptchaSum(sumId string) string {
+func (s *CaptchaSt) CheckCaptchaSum(sumId string) string {
 	aStr := strings.SplitN(sumId, "-", 2)
 	if aStr != nil && len(aStr) == 2 {
 		hStr := fmt.Sprintf("%x", md5.Sum([]byte(aStr[1])))
@@ -90,13 +92,13 @@ func (s *CaptchaSt)CheckCaptchaSum(sumId string) string {
 	return ""
 }
 
-func (s *CaptchaSt)CaptchaSum(id string) string {
+func (s *CaptchaSt) CaptchaSum(id string) string {
 	hStr := fmt.Sprintf("%x", md5.Sum([]byte(id)))
 	return hStr[0:6] + "-" + id
 }
 
-//执行验证码的处理逻辑
-func (s *CaptchaSt)CheckSum(sumid, vcode string) bool {
+// 执行验证码的处理逻辑
+func (s *CaptchaSt) CheckSum(sumid, vcode string) bool {
 	idStr := s.CheckCaptchaSum(sumid)
 	if idStr == "" || !captcha.VerifyString(idStr, vcode) {
 		return false
@@ -104,8 +106,8 @@ func (s *CaptchaSt)CheckSum(sumid, vcode string) bool {
 	return true
 }
 
-//生成请求的hash数值
-func (s *CaptchaSt)GenerateHash(c *gin.Context) string {
+// 生成请求的hash数值
+func (s *CaptchaSt) GenerateHash(c *gin.Context) string {
 	sTime := time.Now().Unix()
 	aStr := c.Request.UserAgent()
 	aStr = fmt.Sprintf("%d,%s", sTime, aStr)
@@ -114,8 +116,8 @@ func (s *CaptchaSt)GenerateHash(c *gin.Context) string {
 	return aStr
 }
 
-//验证请求的hash是否合法
-func (s *CaptchaSt)CheckHash(c *gin.Context, xStr string) bool {
+// 验证请求的hash是否合法
+func (s *CaptchaSt) CheckHash(c *gin.Context, xStr string) bool {
 	aStr := c.Request.UserAgent()
 	vStr := strings.Split(xStr, "-")
 	if vStr == nil || len(vStr) != 3 {

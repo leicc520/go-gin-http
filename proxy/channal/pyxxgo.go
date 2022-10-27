@@ -2,7 +2,7 @@ package channal
 
 import (
 	"errors"
-	"github.com/leicc520/go-orm/log"
+	"git.ziniao.com/webscraper/go-orm/log"
 	"io"
 	"net/http"
 	"strings"

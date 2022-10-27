@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
+	"git.ziniao.com/webscraper/go-gin-http"
 	"github.com/antchfx/htmlquery"
-	"github.com/leicc520/go-gin-http"
 	"golang.org/x/net/html"
 )
 

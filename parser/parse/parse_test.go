@@ -3,7 +3,6 @@ package parse
 import (
 	"errors"
 	"fmt"
-	"github.com/leicc520/go-gin-http"
 	"regexp"
 	"testing"
 )

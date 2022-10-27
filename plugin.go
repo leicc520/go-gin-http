@@ -9,24 +9,29 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/leicc520/go-orm/log"
+	"git.ziniao.com/webscraper/go-orm/log"
 )
-/***********************************************************************
-	统计定义微服务插件代码输入json字符串，输出对象+出错情况
-	开启插件plugins的话需要 插件需要版本话管理，新的版本会覆盖旧版本
-	插件命名规则go.micsrv.srv.xx.v20210701.so 服务明+版本日期
-    新的版本上线之后调用重新加载，将会自动启用新的插件版本
- */
+
+/*
+**********************************************************************
+
+		统计定义微服务插件代码输入json字符串，输出对象+出错情况
+		开启插件plugins的话需要 插件需要版本话管理，新的版本会覆盖旧版本
+		插件命名规则go.micsrv.srv.xx.v20210701.so 服务明+版本日期
+	    新的版本上线之后调用重新加载，将会自动启用新的插件版本
+*/
 type microPlugins map[string]*plugin.Plugin
 type PluginHandler func(string) (interface{}, error)
 type pluginOptionSt struct {
-	SoFile string
+	SoFile  string
 	Version int64
 }
-//定义全局的插件注册处理逻辑
+
+// 定义全局的插件注册处理逻辑
 var Gmicro = microPlugins{}
-//扫码插件目录的so数据资料信息 插件命名规则go.micsrv.srv.uc.so 后缀.so
-func (p *microPlugins) ScanAndLoadSo(pdir string) error  {
+
+// 扫码插件目录的so数据资料信息 插件命名规则go.micsrv.srv.uc.so 后缀.so
+func (p *microPlugins) ScanAndLoadSo(pdir string) error {
 	dir, err := ioutil.ReadDir(pdir)
 	if err != nil {
 		log.Write(log.ERROR, "plugins dir scan error!", err)
@@ -58,7 +63,7 @@ func (p *microPlugins) ScanAndLoadSo(pdir string) error  {
 	for service, items := range options {
 		if pObj, err := plugin.Open(items.SoFile); err != nil {
 			log.Write(log.ERROR, "file ("+items.SoFile+") service("+service+") load plugins error.", err)
-		} else {//加载文件数据信息
+		} else { //加载文件数据信息
 			(*p)[service] = pObj
 			log.Write(log.DEBUG, "load so("+items.SoFile+") service("+service+") success.")
 		}
@@ -66,8 +71,8 @@ func (p *microPlugins) ScanAndLoadSo(pdir string) error  {
 	return nil
 }
 
-//扫码插件目录的so数据资料信息
-func (p *microPlugins) Call(service, method, args string) (interface{}, error)  {
+// 扫码插件目录的so数据资料信息
+func (p *microPlugins) Call(service, method, args string) (interface{}, error) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Write(log.ERROR, "plugins call recover.", err)

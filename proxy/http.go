@@ -17,8 +17,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/leicc520/go-orm"
-	"github.com/leicc520/go-orm/log"
+	"git.ziniao.com/webscraper/go-orm"
+	"git.ziniao.com/webscraper/go-orm/log"
 	"golang.org/x/net/http2"
 )
 

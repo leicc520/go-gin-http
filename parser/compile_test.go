@@ -2,11 +2,11 @@ package parser
 
 import (
 	"fmt"
-	"github.com/leicc520/go-gin-http/proxy"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"git.ziniao.com/webscraper/go-gin-http/proxy"
 )
 
 func init() {
@@ -26,7 +26,7 @@ func TestDemo(t *testing.T) {
 	link := "https://www.amazon.com/dp/B0BBSLF2GT?th=1"
 	file := "/cachedir/once/20221011/aaa.html"
 	fmt.Println(filepath.Join(dir, file))
-	result, err := ioutil.ReadFile(filepath.Join(dir, file))
+	result, err := os.ReadFile(filepath.Join(dir, file))
 	if err != nil {
 		fmt.Println(err)
 		return

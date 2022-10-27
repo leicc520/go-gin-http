@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/leicc520/go-orm/log"
+	"git.ziniao.com/webscraper/go-orm/log"
 )
 
 // 读取文件内容数据信息

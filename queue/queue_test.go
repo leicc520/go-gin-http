@@ -2,28 +2,27 @@ package queue
 
 import (
 	"fmt"
-	"github.com/leicc520/go-orm"
-	"github.com/leicc520/go-orm/log"
+	"git.ziniao.com/webscraper/go-orm"
+	"git.ziniao.com/webscraper/go-orm/log"
 	"strconv"
 	"testing"
 	"time"
 )
-
 
 func TestRetry(t *testing.T) {
 	q := IFQueue(&RabbitMqSt{Url: "amqp://guest:guest@10.100.72.102:5672/", Queue: "demo"})
 	q.Init()
 	go func() {
 		for {
-			time.Sleep(time.Second*1)
+			time.Sleep(time.Second * 1)
 			q.Close()
 		}
 	}()
 
 	go func() {
 		for i := 0; i < 100; i++ {
-			q.Publish("111111=="+strconv.FormatInt(int64(i), 10))
-			time.Sleep(time.Millisecond*500)
+			q.Publish("111111==" + strconv.FormatInt(int64(i), 10))
+			time.Sleep(time.Millisecond * 500)
 		}
 	}()
 	err := q.Consumer(func(bytes []byte) error {
@@ -41,15 +40,15 @@ func TestQueue(t *testing.T) {
 		return
 	}
 	defer q.Close()
-	cb := func([]byte) error { return nil}
+	cb := func([]byte) error { return nil }
 	go q.AsyncConsumer(3, cb)
 
 	sp := func(i int, max int) {
 		for i < max {
-			q.Publish(orm.SqlMap{"data":i})
+			q.Publish(orm.SqlMap{"data": i})
 			log.Write(log.INFO, i)
 			i++
-			time.Sleep(time.Millisecond*50)
+			time.Sleep(time.Millisecond * 50)
 		}
 	}
 

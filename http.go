@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"crypto/tls"
+	"github.com/opentracing/opentracing-go"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -15,16 +16,15 @@ import (
 	"strings"
 	"time"
 
+	"git.ziniao.com/webscraper/go-gin-http/tracing"
+	"git.ziniao.com/webscraper/go-orm/log"
 	"github.com/gin-gonic/gin"
-	"github.com/leicc520/go-gin-http/tracing"
-	"github.com/leicc520/go-orm/log"
-	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 )
 
 const CONTENT_TYPE = "content-type"
 
-//获取查询的语句数据
+// 获取查询的语句数据
 func keySort(data map[string]interface{}) []string {
 	keys := make([]string, 0)
 	for key, _ := range data {
@@ -49,13 +49,13 @@ func NewHttpRequest() *HttpSt {
 	return &HttpSt{query: url.Values{}, header: nil, timeout: 120 * time.Second, cookieJar: cookieJar}
 }
 
-//设置请求的header业务数据信息
+// 设置请求的header业务数据信息
 func (s *HttpSt) SetTimeout(timeout int) *HttpSt {
 	s.timeout = time.Duration(timeout) * time.Second
 	return s
 }
 
-//设置请求的header业务数据信息
+// 设置请求的header业务数据信息
 func (s *HttpSt) SetHeader(header map[string]string) *HttpSt {
 	if s.header != nil { //数据不为空的情况
 		for key, val := range header {
@@ -67,7 +67,7 @@ func (s *HttpSt) SetHeader(header map[string]string) *HttpSt {
 	return s
 }
 
-//获取指定的cookie信息
+// 获取指定的cookie信息
 func (s *HttpSt) GetJarCookie(link, name string) string {
 	u, _ := url.Parse(link)
 	cookies := s.cookieJar.Cookies(u)
@@ -79,12 +79,12 @@ func (s *HttpSt) GetJarCookie(link, name string) string {
 	return ""
 }
 
-//返回数据记录信息
+// 返回数据记录信息
 func (s *HttpSt) GetResponse() *http.Response {
 	return s.sp
 }
 
-//设置请求的header业务数据信息
+// 设置请求的header业务数据信息
 func (s *HttpSt) AddHeader(key, val string) *HttpSt {
 	if s.header == nil {
 		s.header = map[string]string{}
@@ -93,7 +93,7 @@ func (s *HttpSt) AddHeader(key, val string) *HttpSt {
 	return s
 }
 
-//设置发起json的业务请求json,xml,default
+// 设置发起json的业务请求json,xml,default
 func (s *HttpSt) SetContentType(typeStr string) *HttpSt {
 	if s.header == nil {
 		s.header = map[string]string{}
@@ -109,7 +109,7 @@ func (s *HttpSt) SetContentType(typeStr string) *HttpSt {
 	return s
 }
 
-//注入链路跟踪处理逻辑
+// 注入链路跟踪处理逻辑
 func (s *HttpSt) InjectTrace(c *gin.Context) *HttpSt {
 	spanCtx := tracing.GetTracingCtx(c)
 	s.tracingFunc = func(req *http.Request) opentracing.Span {
@@ -122,7 +122,7 @@ func (s *HttpSt) InjectTrace(c *gin.Context) *HttpSt {
 			ext.SpanKindRPCClient)
 		err := opentracing.GlobalTracer().Inject(span.Context(),
 			opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
-		if err != nil {//异常的情况处理逻辑
+		if err != nil { //异常的情况处理逻辑
 			log.Write(log.ERROR, "tracing inject error", err)
 		}
 		return span
@@ -130,25 +130,25 @@ func (s *HttpSt) InjectTrace(c *gin.Context) *HttpSt {
 	return s
 }
 
-//添加设置查询语句
+// 添加设置查询语句
 func (s *HttpSt) Set(name, value string) *HttpSt {
 	s.query.Set(name, value)
 	return s
 }
 
-//获取查询的语句数据
+// 获取查询的语句数据
 func (s *HttpSt) Query() string {
 	return s.query.Encode()
 }
 
-//重置请求的参数数据信息
+// 重置请求的参数数据信息
 func (s *HttpSt) Reset() *HttpSt {
 	s.query = url.Values{}
 	s.header = nil
 	return s
 }
 
-//重置请求的参数数据信息
+// 重置请求的参数数据信息
 func (s *HttpSt) SetTls(keySsl, pemSsl string) *HttpSt {
 	c, _ := tls.X509KeyPair([]byte(pemSsl), []byte(keySsl))
 	cfg := &tls.Config{
@@ -160,7 +160,7 @@ func (s *HttpSt) SetTls(keySsl, pemSsl string) *HttpSt {
 	return s
 }
 
-//上传文件处理逻辑 封装成byte
+// 上传文件处理逻辑 封装成byte
 func (s *HttpSt) UpFile(param map[string]string, paramName, path, fileName string) ([]byte, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -188,7 +188,7 @@ func (s *HttpSt) UpFile(param map[string]string, paramName, path, fileName strin
 	return body.Bytes(), nil
 }
 
-//请求下载文件数据信息
+// 请求下载文件数据信息
 func (s *HttpSt) DownLoad(url, filePath string) (string, error) {
 	var fp *os.File = nil
 	var sp *http.Response = nil
@@ -229,7 +229,7 @@ func (s *HttpSt) DownLoad(url, filePath string) (string, error) {
 	return filePath, nil
 }
 
-//设置启动http代理发起业务请求
+// 设置启动http代理发起业务请求
 func (s *HttpSt) Proxy(proxyUrl string) *HttpSt {
 	s.tlsTransport = &http.Transport{TLSClientConfig: &tls.Config{
 		InsecureSkipVerify: true,
@@ -241,7 +241,7 @@ func (s *HttpSt) Proxy(proxyUrl string) *HttpSt {
 	return s
 }
 
-//发起一个http业务请求
+// 发起一个http业务请求
 func (s *HttpSt) Request(url string, body []byte, method string) (result []byte) {
 	s.sp = nil
 	defer func() { //补货异常的处理逻辑
@@ -263,9 +263,9 @@ func (s *HttpSt) Request(url string, body []byte, method string) (result []byte)
 			req.Header.Set(key, val)
 		}
 	}
-	if s.tracingFunc != nil {//链路跟踪注入处理逻辑
+	if s.tracingFunc != nil { //链路跟踪注入处理逻辑
 		span := s.tracingFunc(req)
-		if span != nil {//结束链路跟踪
+		if span != nil { //结束链路跟踪
 			defer span.Finish()
 		}
 	}

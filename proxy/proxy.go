@@ -3,8 +3,8 @@ package proxy
 import (
 	"time"
 
-	"github.com/leicc520/go-gin-http/proxy/channal"
-	"github.com/leicc520/go-orm/log"
+	"git.ziniao.com/webscraper/go-gin-http/proxy/channal"
+	"git.ziniao.com/webscraper/go-orm/log"
 )
 
 const (

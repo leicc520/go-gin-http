@@ -2,13 +2,13 @@ package parser
 
 import (
 	"errors"
+	core "git.ziniao.com/webscraper/go-gin-http"
 	"net/url"
 	"regexp"
 	"strings"
 
-	"github.com/leicc520/go-gin-http"
-	"github.com/leicc520/go-gin-http/proxy"
-	"github.com/leicc520/go-orm/cache"
+	"git.ziniao.com/webscraper/go-gin-http/proxy"
+	"git.ziniao.com/webscraper/go-orm/cache"
 )
 
 const (

@@ -3,9 +3,9 @@ package core
 import (
 	"time"
 
+	"git.ziniao.com/webscraper/go-orm/log"
 	sls "github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/aliyun/aliyun-log-go-sdk/producer"
-	"github.com/leicc520/go-orm/log"
 	"google.golang.org/protobuf/proto"
 )
 

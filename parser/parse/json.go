@@ -7,15 +7,15 @@ import (
 	"regexp"
 	"strings"
 
+	"git.ziniao.com/webscraper/go-gin-http"
 	"github.com/antchfx/jsonquery"
-	"github.com/leicc520/go-gin-http"
 )
 
 type JsonParseSt struct {
 	node *jsonquery.Node
 }
 
-//解析数据资料信息
+// 解析数据资料信息
 func NewJsonParser(jsonStr string) (parser *JsonParseSt, err error) {
 	defer func() { //数据为空的情况逻辑
 		if e := recover(); e != nil {
@@ -48,13 +48,13 @@ func NewJsonParser(jsonStr string) (parser *JsonParseSt, err error) {
 	return
 }
 
-//通过文件获取解析器的逻辑
+// 通过文件获取解析器的逻辑
 func NewJsonParserFromFile(file string) (*JsonParseSt, error) {
 	jsonStr := core.ReadFile(file)
 	return NewJsonParser(jsonStr)
 }
 
-//获取节点的数据资料信息
+// 获取节点的数据资料信息
 func (s *JsonParseSt) InnerText(expr string) (text string, err error) {
 	node, err := jsonquery.Query(s.node, expr)
 	if err != nil {
@@ -73,7 +73,7 @@ func (s *JsonParseSt) InnerText(expr string) (text string, err error) {
 	return
 }
 
-//获取节点的数据资料信息
+// 获取节点的数据资料信息
 func (s *JsonParseSt) InnerTexts(expr string) (texts []string, err error) {
 	nodes, err := jsonquery.QueryAll(s.node, expr)
 	if err != nil {
@@ -86,7 +86,7 @@ func (s *JsonParseSt) InnerTexts(expr string) (texts []string, err error) {
 	return
 }
 
-//验证是否取到 节点数据
+// 验证是否取到 节点数据
 func (s *JsonParseSt) HasNode(expr string) (has bool, err error) {
 	node, err := jsonquery.Query(s.node, expr)
 	if err == nil && node != nil {
@@ -95,7 +95,7 @@ func (s *JsonParseSt) HasNode(expr string) (has bool, err error) {
 	return
 }
 
-//验证节点取值是否true
+// 验证节点取值是否true
 func (s *JsonParseSt) NodeValueIsTrue(expr string) (r bool, err error) {
 	node, err := jsonquery.Query(s.node, expr)
 	if err != nil {

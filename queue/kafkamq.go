@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
-	"github.com/leicc520/go-orm/log"
+	"git.ziniao.com/webscraper/go-orm/log"
 )
 
 /***********************************************************************************************

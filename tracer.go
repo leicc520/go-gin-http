@@ -1,21 +1,21 @@
 package core
 
 import (
+	"git.ziniao.com/webscraper/go-gin-http/tracing"
+	"git.ziniao.com/webscraper/go-orm/log"
 	"github.com/gin-gonic/gin"
-	"github.com/leicc520/go-gin-http/tracing"
-	"github.com/leicc520/go-orm/log"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 )
 
 var STracingConfig *tracing.JaegerTracingConfigSt = nil
 
-//注入链路跟踪处理逻辑
+// 注入链路跟踪处理逻辑
 func InjectTracing(tracingConfig *tracing.JaegerTracingConfigSt) {
 	STracingConfig = tracingConfig
 }
 
-//链路追踪中间件处理逻辑
+// 链路追踪中间件处理逻辑
 func GINTracing() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !tracing.IsTracing() {
@@ -25,9 +25,9 @@ func GINTracing() gin.HandlerFunc {
 		var span opentracing.Span
 		spCtx, err := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(c.Request.Header))
 		if err != nil {
-			span  = opentracing.GlobalTracer().StartSpan(c.Request.URL.Path, ext.SpanKindRPCServer)
+			span = opentracing.GlobalTracer().StartSpan(c.Request.URL.Path, ext.SpanKindRPCServer)
 		} else {
-			span  = opentracing.StartSpan(c.Request.URL.Path, opentracing.ChildOf(spCtx), ext.SpanKindRPCServer)
+			span = opentracing.StartSpan(c.Request.URL.Path, opentracing.ChildOf(spCtx), ext.SpanKindRPCServer)
 		}
 		span.SetTag("http.signature", JWTACLToken(c))
 		ext.HTTPUrl.Set(span, c.Request.URL.Path)
@@ -43,7 +43,7 @@ func GINTracing() gin.HandlerFunc {
 	}
 }
 
-//关闭或者开启链路跟踪
+// 关闭或者开启链路跟踪
 func handleTracing(c *gin.Context) {
 	str, jwtStr := "OK", c.Query("sp")
 	if app != nil && c.Query("s") == "1" && jwtStr == string(gJwtSecret) {

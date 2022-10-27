@@ -2,14 +2,14 @@ package parser
 
 import (
 	"errors"
+	"gopkg.in/yaml.v3"
 	"os"
 	"strings"
 	"sync"
 
-	"github.com/leicc520/go-gin-http"
-	"github.com/leicc520/go-gin-http/parser/parse"
-	"github.com/leicc520/go-orm/log"
-	"gopkg.in/yaml.v2"
+	"git.ziniao.com/webscraper/go-gin-http"
+	"git.ziniao.com/webscraper/go-gin-http/parser/parse"
+	"git.ziniao.com/webscraper/go-orm/log"
 )
 
 /*

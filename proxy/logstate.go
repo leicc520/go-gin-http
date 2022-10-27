@@ -9,22 +9,22 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
-	"github.com/leicc520/go-orm/log"
+	"git.ziniao.com/webscraper/go-orm/log"
 )
 
 //记录日志的状态 统计记录
 type logStateSt struct {
-	ProxyIdx 	int
-	Proxy       string
-	Host 		string
-	Status 		int
+	ProxyIdx int
+	Proxy    string
+	Host     string
+	Status   int
 }
 
 //redis数值统计处理逻辑
 type RedisStateSt struct {
 	logChan chan string
 	proxy   []string
-	rds *redis.Client
+	rds     *redis.Client
 }
 
 //格式化成字符串
@@ -40,8 +40,8 @@ func logStateBuilder(logStr string) *logStateSt {
 		return nil
 	}
 	proxyIdx, _ := strconv.ParseInt(arrStr[0], 10, 64)
-	status, _   := strconv.ParseInt(arrStr[2], 10, 64)
-	return &logStateSt{ProxyIdx:int(proxyIdx),
+	status, _ := strconv.ParseInt(arrStr[2], 10, 64)
+	return &logStateSt{ProxyIdx: int(proxyIdx),
 		Proxy: arrStr[3], Host: arrStr[1], Status: int(status)}
 }
 
@@ -61,7 +61,7 @@ func (s *RedisStateSt) Chan() chan string {
 //设置代理是否已经存在了
 func (s *RedisStateSt) isExistsProxy(name string) bool {
 	for _, eHost := range s.proxy {
-		if eHost == name {//已经存在了
+		if eHost == name { //已经存在了
 			return true
 		}
 	}
@@ -87,19 +87,19 @@ func (s *RedisStateSt) dayDuration() time.Duration {
 
 //异步任务通知，格式化存储到数据库
 func (s *RedisStateSt) goAsyncNotify() {
-	state      := make(map[string]int)
-	syncChan   := time.After(PROXY_SYNC_REDIS_TIME)
+	state := make(map[string]int)
+	syncChan := time.After(PROXY_SYNC_REDIS_TIME)
 	notifyChan := time.After(s.dayDuration())
 	for {
 		//接收请求处理逻辑
 		select {
 		case logStr, ok := <-s.logChan:
-			if !ok {//句柄广告异常关闭了退出
+			if !ok { //句柄广告异常关闭了退出
 				log.Write(-1, "async proxy monitor exit!")
 				return
 			}
 			if _, ok = state[logStr]; !ok {
-				state[logStr]  = 1
+				state[logStr] = 1
 			} else {
 				state[logStr] += 1
 			}
@@ -137,8 +137,8 @@ func (s *RedisStateSt) syncReset() {
 
 //获取统计的数值状态信息
 func (s *RedisStateSt) state(host string) (string, map[string]string) {
-	ckey  := redisStatisticKey(host)
-	cmd   := s.rds.HGetAll(ckey)
+	ckey := redisStatisticKey(host)
+	cmd := s.rds.HGetAll(ckey)
 	state := cmd.Val()
 	return ckey, state
 }
@@ -149,18 +149,18 @@ func formatNotify(state map[string]string) string {
 	if success < 1 {
 		success += 1
 	}
-	regCmp, _  := regexp.Compile(":[\\d]+$")
-	failed, _  := strconv.ParseInt(state["failed"], 10, 64)
-	ratio  := fmt.Sprintf("%.6f", float64(success) / float64(success + failed) * 100.00)
+	regCmp, _ := regexp.Compile(":[\\d]+$")
+	failed, _ := strconv.ParseInt(state["failed"], 10, 64)
+	ratio := fmt.Sprintf("%.6f", float64(success)/float64(success+failed)*100.00)
 	strBuf := strings.Builder{}
-	strBuf.WriteString("代理服务:"+state["proxy"]+"\r\n")
-	strBuf.WriteString("状态200请求数:"+state["success"]+"\r\n")
-	strBuf.WriteString("状态非200请求数:"+state["failed"]+"\r\n")
-	strBuf.WriteString("计算成功率:"+ratio+"\r\n")
+	strBuf.WriteString("代理服务:" + state["proxy"] + "\r\n")
+	strBuf.WriteString("状态200请求数:" + state["success"] + "\r\n")
+	strBuf.WriteString("状态非200请求数:" + state["failed"] + "\r\n")
+	strBuf.WriteString("计算成功率:" + ratio + "\r\n")
 	strBuf.WriteString("请求失败明细:\r\n")
 	for keyStr, val := range state {
 		if ok := regCmp.MatchString(keyStr); ok {
-			strBuf.WriteString("\t-"+keyStr+" 累计数:"+val+"\r\n")
+			strBuf.WriteString("\t-" + keyStr + " 累计数:" + val + "\r\n")
 		}
 	}
 	return strBuf.String()
@@ -168,12 +168,12 @@ func formatNotify(state map[string]string) string {
 
 //获取redis数据资料信息
 func redisStatisticKey(proxy string) string {
-	return "proxy@"+proxy
+	return "proxy@" + proxy
 }
 
 //将数据迁移到redis当中的处理逻辑
 func (s *RedisStateSt) syncRedis(state map[string]int) {
-	if s.rds == nil {//数据为空的情况
+	if s.rds == nil { //数据为空的情况
 		return
 	}
 	for logStr, nSize := range state {
@@ -185,11 +185,11 @@ func (s *RedisStateSt) syncRedis(state map[string]int) {
 		//统计代理异常情况数据资料信息
 		ckey, field := redisStatisticKey(logState.Proxy), "success"
 		if logState.Status != http.StatusOK {
-			field    = "failed"
+			field = "failed"
 		}
 		s.rds.HSetNX(ckey, "proxy", logState.Proxy)
 		s.rds.HIncrBy(ckey, field, int64(nSize))
-		if logState.Status != http.StatusOK {//记录失败的域名明细
+		if logState.Status != http.StatusOK { //记录失败的域名明细
 			field = fmt.Sprintf("%s:%d", logState.Host, logState.Status)
 			s.rds.HIncrBy(ckey, field, int64(nSize))
 		}

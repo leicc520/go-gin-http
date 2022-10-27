@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/leicc520/go-gin-http"
-	"github.com/leicc520/go-orm"
-	"github.com/leicc520/go-orm/log"
+	"git.ziniao.com/webscraper/go-gin-http"
+	"git.ziniao.com/webscraper/go-orm"
+	"git.ziniao.com/webscraper/go-orm/log"
 )
 
 const (

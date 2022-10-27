@@ -3,9 +3,10 @@ package parse
 import (
 	"errors"
 	"fmt"
-	"github.com/leicc520/go-gin-http"
 	"regexp"
 	"strings"
+
+	"git.ziniao.com/webscraper/go-gin-http"
 )
 
 var (
