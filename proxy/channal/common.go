@@ -3,7 +3,6 @@ package channal
 import (
 	"github.com/go-redis/redis"
 	"sync"
-	"time"
 )
 
 const (
@@ -25,7 +24,8 @@ const (
 	PROXY_CHANNEL_DAMAIGO = "damaigo"
 	PROXY_CHANNEL_SKYGO   = "skygo"
 
-	PROXY_REDIS_PREFIX = "ipproxy@"
+	PROXY_REDIS_PREFIX = "proxy@ip"
+	PROXY_NEARS_PREFIX = "proxy@state"
 )
 
 type IFProxy interface {
@@ -40,9 +40,6 @@ var (
 	proxyOnce                           = sync.Once{}
 	distributedCache *redis.Client      = nil
 	proxyDriver      map[string]IFProxy = nil
-	//单次提取IP + 轮询的时间
-	ProxySize = int64(100)
-	ProxyTime = time.Second * 300
 )
 
 // 代理注册到注册器当中

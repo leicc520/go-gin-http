@@ -2,10 +2,11 @@ package channal
 
 import (
 	"errors"
-	"git.ziniao.com/webscraper/go-orm/log"
 	"io"
 	"net/http"
 	"strings"
+
+	"git.ziniao.com/webscraper/go-orm/log"
 )
 
 type ShenLongGoSt struct {

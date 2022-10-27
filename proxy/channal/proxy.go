@@ -1,6 +1,7 @@
 package channal
 
 import (
+	"errors"
 	"strings"
 	"sync"
 	"time"
@@ -13,6 +14,7 @@ type proxyHandleSt func(proto string, proxy IFProxy) error
 
 type BaseProxySt struct {
 	isInit    bool
+	isAlive   bool
 	idx       int
 	n         sync.Once
 	l         sync.RWMutex
@@ -52,8 +54,29 @@ func (s *BaseProxySt) SetIP(ip []string) {
 	if distributedCache != nil { //最长1天的缓存
 		distributedCache.Set(PROXY_REDIS_PREFIX+s.name, ipStr, s.proxyTime)
 	}
+	log.Write(log.INFO, "代理生成", s.name, ipStr)
 	s.ipList = ip
 	s.isInit = true
+}
+
+// 最近是否有使用，每次取ip的时候更新一下
+func (s *BaseProxySt) nearStats() {
+	if distributedCache != nil {
+		distributedCache.Set(PROXY_NEARS_PREFIX+s.name, "OK", s.proxyTime)
+	}
+}
+
+// 更新代理的处理逻辑
+func (s *BaseProxySt) callProxy(proto string) error {
+	if distributedCache == nil {
+		return errors.New("ip代理未设置管理redis,无法操作")
+	}
+	cmd := distributedCache.Get(PROXY_NEARS_PREFIX + s.name)
+	if cmd != nil && cmd.Val() == "OK" {
+		log.Write(log.INFO, "开启了自动切换IP代理池逻辑...")
+		return s.getProxy(proto, s)
+	}
+	return nil
 }
 
 // 通过缓存获取IP数据信息
@@ -112,12 +135,12 @@ func (s BaseProxySt) checkStart() bool {
 func (s *BaseProxySt) onceStart(proto string) {
 	if distributedCache == nil {
 		log.Write(-1, "未设置分布式缓存策略【SetRedis】....")
-		panic("未设置分布式缓存策略....")
+		return
 	}
 	locker := locker.NewRedisLock(distributedCache, s.name)
 	if !locker.Expire(-1).Lock() { //获取锁失败的情况
 		if s.checkStart() {
-			log.Write(-1, "自动检测释放代理锁", s.name)
+			log.Write(log.DEBUG, "自动检测释放代理锁", s.name)
 			locker.UnLock()
 			if !locker.Expire(-1).Lock() {
 				return
@@ -131,14 +154,15 @@ func (s *BaseProxySt) onceStart(proto string) {
 	if ip := s.GetIpList(); ip == nil || len(ip) < 1 {
 		s.getProxy(proto, s) //首次初始化
 	}
+	s.isAlive = true
 	for { //每3分钟中自动切换一下IP
 		select {
 		case <-s.notify:
-			err := s.getProxy(proto, s)
-			log.Write(-1, s.name, "紧急代理切换", err)
+			err := s.callProxy(proto)
+			log.Write(log.DEBUG, s.name, "紧急代理切换", err)
 		case <-time.After(s.proxyTime):
-			err := s.getProxy(proto, s)
-			log.Write(-1, s.name, "定时代理切换", err)
+			err := s.callProxy(proto)
+			log.Write(log.DEBUG, s.name, "定时代理切换", err)
 		}
 	}
 }
@@ -153,6 +177,9 @@ func (s *BaseProxySt) GetProxy(proto string) string {
 	}
 	s.l.RLock()
 	defer s.l.RUnlock()
+	if s.isAlive { //只有获取锁的实力执行
+		s.nearStats() //更新一下说明获取IP
+	}
 	ipList := s.GetIpList()
 	if ipList == nil || len(ipList) < 1 {
 		return ""
