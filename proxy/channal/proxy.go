@@ -129,7 +129,7 @@ func (s BaseProxySt) checkStart() bool {
 			if ipStr := s.ipStr(); len(ipStr) < 1 {
 				nTry++
 				log.Write(-1, "已经被其他服务锁定,解锁检测", s.name)
-				if nTry >= 3 { //连续三次见到ip为空，说明更新ip的协程挂了
+				if nTry >= 2 { //连续2次见到ip为空，说明更新ip的协程挂了
 					return true
 				}
 			} else { //重置0
