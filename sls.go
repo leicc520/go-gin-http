@@ -3,6 +3,7 @@ package core
 import (
 	"time"
 
+	sls "github.com/aliyun/aliyun-log-go-sdk"
 	"github.com/aliyun/aliyun-log-go-sdk/producer"
 	"github.com/leicc520/go-orm/log"
 	"google.golang.org/protobuf/proto"
@@ -22,7 +23,7 @@ type AliYunSLSSt struct {
 	SLSProject      string `json:"sls_project"`
 }
 
-//初始化
+// 初始化
 func (s *AliYunSLSSt) InitProducer() {
 	config := producer.GetDefaultProducerConfig()
 	config.Endpoint = s.EndPint
@@ -44,7 +45,7 @@ func (cb *SLSCallback) Fail(result *producer.Result) {
 	log.Write(log.ERROR, "send sls log fail", result.GetErrorMessage())
 }
 
-//发送记录sls日志请求
+// 发送记录sls日志请求
 func SendSLSLog(contents []*sls.LogContent) {
 	if SLSProducer == nil || SLSConfig == nil {
 		log.Write(log.DEBUG, "send sls log not init")
@@ -59,14 +60,14 @@ func SendSLSLog(contents []*sls.LogContent) {
 	}
 }
 
-//关闭SLS日志链接请求
+// 关闭SLS日志链接请求
 func CloseSLSLog() {
 	if SLSProducer != nil {
 		SLSProducer.SafeClose()
 	}
 }
 
-//包装日志数据信息结构处理逻辑
+// 包装日志数据信息结构处理逻辑
 func SLSWrapped(node string, content string, category string) []*sls.LogContent {
 	return []*sls.LogContent{
 		{Key: proto.String("node"), Value: proto.String(node)},
