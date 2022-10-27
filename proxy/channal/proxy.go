@@ -27,6 +27,11 @@ type BaseProxySt struct {
 	ipList    []string //改成通过redis获取
 }
 
+// 检测是否含有IP
+func (s *BaseProxySt) ContainsIP(str string) bool {
+	return regIpCheck.MatchString(str)
+}
+
 // 初始化处理逻辑
 func (s *BaseProxySt) init(name string, pHandle proxyHandleSt) {
 	s.notify = make(chan bool)
@@ -51,6 +56,10 @@ func (s *BaseProxySt) SetIP(ip []string) {
 	s.l.Lock()
 	defer s.l.Unlock()
 	ipStr := strings.Join(ip, ",")
+	if !s.ContainsIP(ipStr) { //提取IP报错的情况
+		log.Write(-1, s.name, "提取IP返回错误...", ipStr)
+		return
+	}
 	if distributedCache != nil { //最长1天的缓存
 		distributedCache.Set(PROXY_REDIS_PREFIX+s.name, ipStr, s.proxyTime)
 	}

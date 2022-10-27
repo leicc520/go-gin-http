@@ -2,6 +2,7 @@ package channal
 
 import (
 	"github.com/go-redis/redis"
+	"regexp"
 	"sync"
 )
 
@@ -40,6 +41,7 @@ var (
 	proxyOnce                           = sync.Once{}
 	distributedCache *redis.Client      = nil
 	proxyDriver      map[string]IFProxy = nil
+	regIpCheck, _                       = regexp.Compile(`[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}:[\d]+`)
 )
 
 // 代理注册到注册器当中

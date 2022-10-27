@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/go-redis/redis"
 	"git.ziniao.com/webscraper/go-orm/log"
+	"github.com/go-redis/redis"
 )
 
 /************************************************************
@@ -26,7 +26,7 @@ const (
 	MaxProxyLockTime = time.Second * 30
 )
 
-//获取数据资料信息
+// 获取数据资料信息
 var (
 	monitorState   map[string]*Monitor = nil
 	statRedis      *RedisStateSt       = nil
@@ -35,12 +35,12 @@ var (
 	regIpv4, _                         = regexp.Compile(`[\d]+\.[\d]+\.[\d]+\.[\d]+:[\d]+$`)
 )
 
-//初始化对象数据资料信息
+// 初始化对象数据资料信息
 func NewMonitor(proxy []ProxySt) *Monitor {
 	return &Monitor{proxy: proxy, len: len(proxy)}
 }
 
-//初始化数据资料信息 放置默认代理
+// 初始化数据资料信息 放置默认代理
 func Init(proxy []ProxySt, rds *redis.Client) {
 	onceInit.Do(func() {
 		if monitorState == nil {
@@ -53,17 +53,17 @@ func Init(proxy []ProxySt, rds *redis.Client) {
 	})
 }
 
-//设置注册代理监控
+// 设置注册代理监控
 func SetMonitor(name string, monitor *Monitor) {
 	monitorState[name] = monitor
 }
 
-//是否允许使用本地IP
+// 是否允许使用本地IP
 func IsCloseLocalIP(isUse bool) {
 	isCloseLocalIP = isUse
 }
 
-//返回统计数据资料信息
+// 返回统计数据资料信息
 func GetMonitor(name string) *Monitor {
 	if len(name) < 1 {
 		name = PROXY_DEFUALT_NAME
@@ -75,12 +75,12 @@ func GetMonitor(name string) *Monitor {
 	return nil
 }
 
-//获取代理地址
+// 获取代理地址
 func (s *Monitor) GetProxy(isTcp, isCut bool) string {
 	nlen := len(s.proxy)
 	for i := 0; i < nlen; i++ {
 		item := &s.proxy[i]
-		if len(item.Url) < 1 || isCut {
+		if item.Status > 0 && (len(item.Url) < 1 || isCut) {
 			item.CutProxy(false) //切换代理
 		}
 		if isTcp == item.IsTcp {
@@ -90,7 +90,7 @@ func (s *Monitor) GetProxy(isTcp, isCut bool) string {
 	return ""
 }
 
-//获取数据资料信息
+// 获取数据资料信息
 func (s *Monitor) ItemNotify(proxy string) string {
 	if statRedis == nil {
 		return "未开启代理监控统计..."
@@ -102,7 +102,7 @@ func (s *Monitor) ItemNotify(proxy string) string {
 	return formatNotify(state)
 }
 
-//上报统计数据资料信息往队列写，然后异步协程同步更新到redis当中
+// 上报统计数据资料信息往队列写，然后异步协程同步更新到redis当中
 func (s *Monitor) Report(idx int, host string, statusCode int) {
 	if idx < 0 || idx > len(s.proxy) || statRedis == nil { //如果没有定位到代理的情况
 		return
@@ -131,7 +131,7 @@ func (s *Monitor) Report(idx int, host string, statusCode int) {
 	}
 }
 
-//代理调度处理逻辑
+// 代理调度处理逻辑
 func (s *Monitor) Proxy() (int, string) {
 	st := time.Now().UnixNano()
 	n := atomic.AddUint64(&s.Request, 1)

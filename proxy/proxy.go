@@ -28,6 +28,9 @@ type ProxySt struct {
 
 // 自动切换代理处理逻辑
 func (s *ProxySt) CutProxy(isCut bool) {
+	if s.Status < 1 { //关闭了代理
+		return
+	}
 	ipAddress := ""
 	if isCut { //切代理，错误太多的时候
 		ipAddress = channal.CutProxy(s.Proxy, s.Params, channal.PROXY_SOCK5, s.ProxyTime)
@@ -38,5 +41,5 @@ func (s *ProxySt) CutProxy(isCut bool) {
 		s.Url = "http://" + ipAddress
 		s.Expire, s.Status, s.IsTcp = 0, 1, true
 	}
-	log.Write(-1, "自动切换IP", ipAddress)
+	log.Write(-1, "自动切换IP:", ipAddress)
 }
