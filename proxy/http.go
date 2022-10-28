@@ -381,7 +381,7 @@ func (s *HttpSt) UpFile(param map[string]string, paramName, path, fileName strin
 }
 
 // 请求下载文件数据信息
-func (s *HttpSt) DownLoad(url, filePath string) (string, error) {
+func (s *HttpSt) DownLoad(url string, body []byte, method, filePath string) (string, error) {
 	var fp *os.File = nil
 	var sp *http.Response = nil
 	defer func() { //补货异常的处理逻辑
@@ -395,7 +395,7 @@ func (s *HttpSt) DownLoad(url, filePath string) (string, error) {
 			fp.Close()
 		}
 	}()
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
 	if err != nil {
 		log.Write(log.ERROR, url, err)
 		return "", err

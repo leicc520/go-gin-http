@@ -3,6 +3,7 @@ package parse
 import (
 	"errors"
 	"fmt"
+	core "git.ziniao.com/webscraper/go-gin-http"
 	"regexp"
 	"testing"
 )
@@ -72,7 +73,6 @@ func TestQuery(t *testing.T) {
 	fmt.Println(tt, err)
 	astr, err := tt.InnerTexts(".indent-left span")
 	fmt.Println(astr, err)
-
 	str = core.StripTags(str)
 	fmt.Println(str)
 }
