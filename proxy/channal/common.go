@@ -26,7 +26,6 @@ const (
 	PROXY_CHANNEL_SKYGO   = "skygo"
 
 	PROXY_REDIS_PREFIX = "proxy@ip"
-	PROXY_NEARS_PREFIX = "proxy@state"
 )
 
 type IFProxy interface {

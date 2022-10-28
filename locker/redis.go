@@ -26,7 +26,7 @@ func (s *RedisLockerSt) Expire(exp time.Duration) *RedisLockerSt {
 func (s *RedisLockerSt) Lock() bool {
 	cKey := lockerPrefix + s.name
 	cmd := s.rds.Incr(cKey)
-	if cmd == nil || cmd.Val() > 1 {
+	if cmd == nil || cmd.Err() != nil || cmd.Val() > 1 {
 		return false //已经有脚本执行了
 	}
 	if s.exp > 0 { //设置过期时间
