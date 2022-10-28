@@ -15,9 +15,9 @@ type KafkaConsumerSt struct {
 }
 
 // 创建一个消费者处理逻辑
-func NewKafkaConsumer(conCurrency int, autoAck bool, h IFConsumer, p pMessage) *KafkaConsumerSt {
+func NewKafkaConsumer(conCurrency int, autoAck bool, topic string, h IFConsumer, p pMessage) *KafkaConsumerSt {
 	c := &KafkaConsumerSt{Ready: make(chan bool)}
-	c.init(conCurrency, autoAck, h, p)
+	c.init(conCurrency, autoAck, topic, h, p)
 	return c
 }
 
@@ -37,7 +37,7 @@ func (c *KafkaConsumerSt) Cleanup(sarama.ConsumerGroupSession) error {
 }
 
 // 重试机制的出来逻辑
-func (c *consumerSt) reset(message *sarama.ConsumerMessage) {
+func (c *KafkaConsumerSt) reset(message *sarama.ConsumerMessage) {
 	var err = errors.New("重试调用未执行")
 	if c.push != nil { //更新数据信息
 		err = c.push(message.Topic, message.Value)
@@ -46,7 +46,7 @@ func (c *consumerSt) reset(message *sarama.ConsumerMessage) {
 }
 
 // 异步消费的处理逻辑
-func (c *consumerSt) asyncConsumer(session sarama.ConsumerGroupSession, message *sarama.ConsumerMessage) {
+func (c *KafkaConsumerSt) asyncConsumer(session sarama.ConsumerGroupSession, message *sarama.ConsumerMessage) {
 	var err error = nil
 	c.goConChan <- 1
 	go func(session sarama.ConsumerGroupSession, message *sarama.ConsumerMessage) {
@@ -91,7 +91,7 @@ func (c *KafkaConsumerSt) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 		case message := <-claim.Messages():
 			log.Write(log.INFO, "Message claimed: ", string(message.Value), message.Timestamp, message.Topic)
 			if c.conCurrency <= 1 { //但协程的处理逻辑
-				c.asyncConsumer(session, message)
+				c.syncConsumer(session, message)
 			} else {
 				c.asyncConsumer(session, message)
 			}
@@ -100,4 +100,5 @@ func (c *KafkaConsumerSt) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 			return nil
 		}
 	}
+	return nil
 }

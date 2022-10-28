@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"git.ziniao.com/webscraper/go-gin-http/queue/consumer"
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
-
+	
+	"git.ziniao.com/webscraper/go-gin-http/queue/consumer"
 	"git.ziniao.com/webscraper/go-orm/log"
 	"github.com/Shopify/sarama"
 )
@@ -34,9 +33,6 @@ type KafkaMqSt struct {
 	QueueSt                                                                             //集成基础结构体
 	syncProducer        sarama.SyncProducer  `yaml:"-"`                                 //主要用作发信息
 	syncConsumer        sarama.ConsumerGroup `yaml:"-"`                                 //消费者群组
-	consumerGroupCtx    context.Context      `yaml:"-"`
-	consumerGroupCancel context.CancelFunc   `yaml:"-"`
-	consumerGroupWg     sync.WaitGroup       `yaml:"-"`
 }
 
 // 初始化处理逻辑,需要执行一次即可
@@ -189,9 +185,10 @@ func (r *KafkaMqSt) _config() *sarama.Config {
 
 // 开始一个服务处理逻辑
 func (r *KafkaMqSt) Start() (err error) {
+	r.Init()//初始化完成
 	config := r._config()
 	keepRunning := true
-	r.consumerGroupCtx, r.consumerGroupCancel = context.WithCancel(context.Background())
+	r.consumerCtx, r.consumerCancel = context.WithCancel(context.Background())
 	nodeSrv := strings.Split(r.NodeSrv, ",")
 	r.syncConsumer, err = sarama.NewConsumerGroup(nodeSrv, r.Group, config)
 	if err != nil { //创建消费组失败的情况
@@ -209,7 +206,7 @@ func (r *KafkaMqSt) Start() (err error) {
 	signal.Notify(sigterm, syscall.SIGINT, syscall.SIGTERM)
 	for keepRunning {
 		select {
-		case <-r.consumerGroupCtx.Done():
+		case <-r.consumerCtx.Done():
 			log.Write(-1, "terminating: context cancelled")
 			keepRunning = false
 		case <-sigterm:
@@ -219,29 +216,28 @@ func (r *KafkaMqSt) Start() (err error) {
 			r.toggleConsumptionFlow(&consumptionIsPaused)
 		}
 	}
-	r.consumerGroupCancel()
-	r.consumerGroupWg.Wait()
+	r.consumerCancel()
+	r.consumerWg.Wait()
 	r.Close() //执行退出了
 	return nil
 }
 
 // 启动一个消费者处理逻辑业务
 func (r *KafkaMqSt) consumerStart(topic string, cWrapper *consumerWrapperSt) {
-	topics := strings.Split(topic, ",")
-	r.consumerGroupWg.Add(1)
-	cc := consumer.NewKafkaConsumer(cWrapper.conCurrency, r.AutoAck, cWrapper.handle, r.Publish)
+	r.consumerWg.Add(1)
+	cc := consumer.NewKafkaConsumer(cWrapper.conCurrency, r.AutoAck, topic, cWrapper.handle, r.Publish)
 	go func() {
-		defer r.consumerGroupWg.Done()
+		defer r.consumerWg.Done()
 		for {
 			// `Consume` should be called inside an infinite loop, when a
 			// server-side rebalance happens, the consumer session will need to be
 			// recreated to get the new claims
-			if err := r.syncConsumer.Consume(r.consumerGroupCtx, topics, cc); err != nil {
+			if err := r.syncConsumer.Consume(r.consumerCtx, []string{topic}, cc); err != nil {
 				log.Write(log.ERROR, "Error from consumer: %v", err)
 			}
-			log.Write(-1, "Consume 重新进入操作逻辑...", r.consumerGroupCtx.Err())
+			log.Write(-1, "Consume 重新进入操作逻辑...", r.consumerCtx.Err())
 			// check if context was cancelled, signaling that the consumer should stop
-			if r.consumerGroupCtx.Err() != nil {
+			if r.consumerCtx.Err() != nil {
 				return
 			}
 			cc.Ready = make(chan bool)
