@@ -27,9 +27,9 @@ func (c *KafkaConsumeClaimSt) Setup(sarama.ConsumerGroupSession) error {
 // Cleanup is run at the end of a session, once all ConsumeClaim goroutines have exited
 func (c *KafkaConsumeClaimSt) Cleanup(sarama.ConsumerGroupSession) error {
 	if c.regConsumer != nil { //并发处理的话关闭句柄
-		for _, accept := range c.regConsumer {
-			if accept.conCurrency > 1 {
-				close(accept.goConChan)
+		for _, regAccept := range c.regConsumer {
+			if regAccept.conCurrency > 1 {
+				close(regAccept.goConChan)
 			}
 		}
 	}
@@ -42,8 +42,8 @@ func (c *KafkaConsumeClaimSt) ConsumeClaim(session sarama.ConsumerGroupSession, 
 		select {
 		case message := <-claim.Messages():
 			log.Write(log.INFO, "Message claimed: ", string(message.Value), message.Timestamp, message.Topic)
-			if consumer, ok := c.regConsumer[message.Topic]; ok {
-				consumer.consumerMessage(message, session)
+			if regConsumer, ok := c.regConsumer[message.Topic]; ok {
+				regConsumer.consumerMessage(message, session)
 			} else { //未注册的情况逻辑
 				log.Write(-1, "丢弃未注册的Topic【"+message.Topic+"】任务逻辑...")
 			}

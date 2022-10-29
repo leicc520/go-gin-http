@@ -27,16 +27,19 @@ func TestPushv2RabbitMQ(t *testing.T) {
 }
 
 type ConsumerDemo struct {
+	Sleep  time.Duration
+	Result bool
 }
 
 func (d *ConsumerDemo) Accept(topic string, message []byte) bool {
 	fmt.Println(topic, string(message))
-	return false //errors.New("Failed")
+	time.Sleep(d.Sleep)
+	return d.Result //errors.New("Failed")
 }
 
 func TestConsumerRabbitMQ(t *testing.T) {
-	c := ConsumerDemo{}
-	d := ConsumerDemo{}
+	c := ConsumerDemo{Result: true}
+	d := ConsumerDemo{Result: true}
 	q := IFQueue(&RabbitMqSt{Url: "amqp://guest:guest@192.168.138.128:5673/", AutoAck: false})
 	q.Register("test", &c)
 	q.RegisterN("demo", 4, &d)
@@ -54,19 +57,19 @@ func TestPushv1KafkaMQ(t *testing.T) {
 }
 
 func TestPushv2KafkaMQ(t *testing.T) {
-	q := IFQueue(&KafkaMqSt{NodeSrv: "192.168.138.128:9092", Version: "2.7.0", Group: "demo", AutoAck: false})
+	q := IFQueue(&KafkaMqSt{NodeSrv: "192.168.138.128:9092", Version: "2.7.0", Group: "demo", AutoAck: true})
 	for i := 0; i < 200; i++ {
 		str := fmt.Sprintf("demo%08d", i)
 		err := q.Publish("demo", str)
 		fmt.Println(err)
-		time.Sleep(time.Second)
+		time.Sleep(time.Millisecond * 10)
 	}
 }
 
 func TestConsumerKafkaMQ(t *testing.T) {
-	c := ConsumerDemo{}
-	d := ConsumerDemo{}
-	q := IFQueue(&KafkaMqSt{NodeSrv: "192.168.138.128:9092", Version: "2.7.0", Group: "demo", AutoAck: false})
+	c := ConsumerDemo{Result: false, Sleep: time.Second}
+	d := ConsumerDemo{Result: true, Sleep: time.Second}
+	q := IFQueue(&KafkaMqSt{NodeSrv: "192.168.138.128:9092", Version: "2.7.0", Group: "demo", AutoAck: true})
 	q.Register("test", &c)
 	q.RegisterN("demo", 4, &d)
 	go func() {

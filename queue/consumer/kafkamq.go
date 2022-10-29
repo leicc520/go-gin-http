@@ -1,7 +1,6 @@
 package consumer
 
 import (
-	"errors"
 	"time"
 
 	"git.ziniao.com/webscraper/go-orm/log"
@@ -22,11 +21,11 @@ func NewKafkaConsumer(conCurrency int, autoAck bool, topic string, h IFConsumer,
 
 // 重试机制的出来逻辑
 func (c *KafkaConsumerSt) reset(message *sarama.ConsumerMessage) {
-	var err = errors.New("重试调用未执行")
 	if c.push != nil { //更新数据信息
-		err = c.push(message.Topic, message.Value)
+		if err := c.push(message.Topic, message.Value); err != nil {
+			log.Write(log.DEBUG, "Kafka重试重新入队列异常", err)
+		}
 	}
-	log.Write(log.INFO, "Kafka重试机制", err)
 }
 
 // 异步消费的处理逻辑
@@ -39,16 +38,7 @@ func (c *KafkaConsumerSt) asyncConsumer(message *sarama.ConsumerMessage, session
 				log.Write(-1, message.Topic, "Kafka queue handle panic", e)
 			}
 		}()
-
-		sTime := time.Now() //统计任务执行时长
-		if isOk := c.consumer.Accept(message.Topic, message.Value); !isOk {
-			c.reset(message) //重试逻辑-再次入队列一次
-		}
-		log.Write(log.INFO, message.Topic, "Kafka任务执行时长:", time.Since(sTime))
-		session.MarkMessage(message, "")
-		if !c.autoAck { //手动确认的情况逻辑
-			session.Commit()
-		}
+		c.syncConsumer(message, session) //同步消费逻辑
 	}(session, message)
 }
 
@@ -68,6 +58,11 @@ func (c *KafkaConsumerSt) syncConsumer(message *sarama.ConsumerMessage, session 
 
 // ConsumeClaim must start a consumer loop of ConsumerGroupClaim's Messages().
 func (c *KafkaConsumerSt) consumerMessage(message *sarama.ConsumerMessage, session sarama.ConsumerGroupSession) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Write(log.DEBUG, "消息业务逻辑处理失败", err)
+		}
+	}()
 	if c.conCurrency <= 1 { //但协程的处理逻辑
 		c.syncConsumer(message, session)
 	} else {

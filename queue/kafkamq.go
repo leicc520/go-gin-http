@@ -121,13 +121,8 @@ func (s *KafkaMqSt) Publish(topic string, data interface{}) (err error) {
 		}
 		break
 	}
-	if err != nil {
-		log.Write(log.ERROR, "kafka send message error topic{", topic, "}", err)
-		return err
-	} else {
-		log.Write(log.INFO, "kafka send message ok topic{", topic, "}:", _partition, _offset)
-	}
-	return nil
+	log.Write(log.INFO, "kafka发送消息{", topic, "}:", _partition, _offset, err)
+	return
 }
 
 // 队列暂停等逻辑操作
@@ -193,7 +188,8 @@ func (s *KafkaMqSt) Start() (err error) {
 	consumptionIsPaused := false
 	regAccept := make(map[string]*consumer.KafkaConsumerSt)
 	for topic, cWrapper := range s.topics { //创建消费者对象逻辑
-		regAccept[topic] = consumer.NewKafkaConsumer(cWrapper.conCurrency, s.AutoAck, topic, cWrapper.handle, s.Publish)
+		regAccept[topic] = consumer.NewKafkaConsumer(cWrapper.conCurrency,
+			s.AutoAck, topic, cWrapper.handle, s.Publish)
 	}
 	s.consumerStart(regAccept) //启动消费服务监听
 	sigusr1 := make(chan os.Signal, 1)
