@@ -3,10 +3,10 @@ package queue
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"git.ziniao.com/webscraper/go-gin-http/queue/consumer"
 	"git.ziniao.com/webscraper/go-orm/log"
@@ -28,7 +28,7 @@ func (s *RabbitMqSt) getState(topic string) *consumer.RabbitMqStateSt {
 	if state, ok := s.state[topic]; ok && !state.Channel.IsClosed() {
 		return state
 	}
-	s.Init() //完成初始化逻辑
+	s.init() //完成初始化逻辑
 	state := &consumer.RabbitMqStateSt{}
 	if err := state.Init(topic, s.Durable, s.AutoDelete, s.conn); err != nil {
 		return nil
@@ -46,12 +46,7 @@ func (s *RabbitMqSt) Publish(topic string, data interface{}) (err error) {
 		pMsg = &amqp.Publishing{ContentType: "text/plain", Body: body}
 	}
 	s.l.Lock()
-	defer func() {
-		s.l.Unlock()
-		if e := recover(); e != nil {
-			err = errors.New(fmt.Sprintf("%+v", e))
-		}
-	}()
+	defer s.l.Unlock()
 	ctx := context.Background()
 	for i := 0; i < retryLimit; i++ {
 		state := s.getState(topic)
@@ -69,19 +64,38 @@ func (s *RabbitMqSt) Publish(topic string, data interface{}) (err error) {
 	return err
 }
 
+//连接队列服务的处理逻辑
+func (s *RabbitMqSt) _connect() (err error) {
+	if s.conn != nil && !s.conn.IsClosed() {
+		return //已经连接成功
+	}
+	s.conn, err = amqp.Dial(s.Url)
+	if err != nil {
+		log.Write(log.ERROR, "Failed connect ", err)
+		return
+	}
+	return nil
+}
+
 // 初始化队列的链接处理逻辑 初始化的时候要锁定
-func (s *RabbitMqSt) Init() (err error) {
+func (s *RabbitMqSt) init() (err error) {
 	s.once.Do(func() {
 		if s.topics == nil { //初始化一下
 			s.topics = make(TopicConsumeSt)
 		}
 		s.state = make(map[string]*consumer.RabbitMqStateSt)
-		s.conn, err = amqp.Dial(s.Url)
-		if err != nil {
-			log.Write(log.ERROR, "Failed connect ", err)
+		if err = s._connect(); err != nil {
 			panic(err)
 		}
 	})
+	//重连最多尝试3次
+	for i := 0; i < retryLimit; i++ {
+		if err = s._connect(); err != nil {
+			continue
+		} //重连的检测
+		time.Sleep(time.Second * time.Duration(i+1))
+		break
+	}
 	return err
 }
 
@@ -102,7 +116,7 @@ func (s *RabbitMqSt) Close() {
 //启动服务的处理逻辑
 func (s *RabbitMqSt) Start() (err error) {
 	keepRunning := true
-	s.Init() //完成初始化
+	s.init() //完成初始化
 	s.consumerCtx, s.consumerCancel = context.WithCancel(context.Background())
 	//遍历注册consumer到消费组当中
 	for topic, consumerWrapper := range s.topics {
