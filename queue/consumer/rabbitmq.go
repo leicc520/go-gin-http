@@ -81,12 +81,12 @@ func NewRabbitMqConsumer(conCurrency int, autoAck bool, topic string, h IFConsum
 }
 
 // 确认队列的处理逻辑 释放
-func (c *RabbitMqConsumerSt) reset(deliveryTag uint64, err error) error {
+func (c *RabbitMqConsumerSt) reset(deliveryTag uint64, isOk bool) (err error) {
 	c.l.Lock()
 	defer c.l.Unlock()
 	//如果是非自动确认的话 需要手动确认 需要版本一直
 	if !c.autoAck {
-		if err == nil {
+		if isOk {
 			err = c.state.Channel.Ack(deliveryTag, false)
 		} else {
 			err = c.state.Channel.Reject(deliveryTag, true)
@@ -95,15 +95,15 @@ func (c *RabbitMqConsumerSt) reset(deliveryTag uint64, err error) error {
 			log.Write(-1, "队列ACK确认异常", err)
 		}
 	}
-	return nil
+	return
 }
 
 //同步的消费处理逻辑
 func (c *RabbitMqConsumerSt) syncConsumer(dMsg amqp.Delivery) {
 	sTime := time.Now()
-	err := c.consumer.Accept(c.topic, dMsg.Body) //业务只需关注数据即可
+	isOk := c.consumer.Accept(c.topic, dMsg.Body) //业务只需关注数据即可
 	log.Write(log.INFO, c.topic, "任务执行时长:", time.Since(sTime))
-	c.reset(dMsg.DeliveryTag, err) //处理完结确认
+	c.reset(dMsg.DeliveryTag, isOk) //处理完结确认
 }
 
 // 启动异步执行处理逻辑
@@ -117,9 +117,9 @@ func (c *RabbitMqConsumerSt) asyncConsumer(dMsg amqp.Delivery) {
 			}
 		}()
 		sTime := time.Now()
-		err := c.consumer.Accept(c.topic, dlMsg.Body) //业务只需关注数据即可
+		isOk := c.consumer.Accept(c.topic, dlMsg.Body) //业务只需关注数据即可
 		log.Write(log.INFO, c.topic, "任务执行时长:", time.Since(sTime))
-		c.reset(dlMsg.DeliveryTag, err) //处理完结确认
+		c.reset(dlMsg.DeliveryTag, isOk) //处理完结确认
 	}(dMsg)
 }
 

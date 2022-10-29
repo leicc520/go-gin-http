@@ -29,9 +29,9 @@ func TestPushv2RabbitMQ(t *testing.T) {
 type ConsumerDemo struct {
 }
 
-func (d *ConsumerDemo) Accept(topic string, message []byte) error {
+func (d *ConsumerDemo) Accept(topic string, message []byte) bool {
 	fmt.Println(topic, string(message))
-	return nil
+	return false //errors.New("Failed")
 }
 
 func TestConsumerRabbitMQ(t *testing.T) {
@@ -69,5 +69,9 @@ func TestConsumerKafkaMQ(t *testing.T) {
 	q := IFQueue(&KafkaMqSt{NodeSrv: "192.168.138.128:9092", Version: "2.7.0", Group: "demo", AutoAck: false})
 	q.Register("test", &c)
 	q.RegisterN("demo", 4, &d)
+	go func() {
+		time.Sleep(time.Second * 3)
+		q.Publish("test", "11111111111111111")
+	}()
 	q.Start()
 }

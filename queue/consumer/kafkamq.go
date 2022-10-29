@@ -31,7 +31,6 @@ func (c *KafkaConsumerSt) reset(message *sarama.ConsumerMessage) {
 
 // 异步消费的处理逻辑
 func (c *KafkaConsumerSt) asyncConsumer(message *sarama.ConsumerMessage, session sarama.ConsumerGroupSession) {
-	var err error = nil
 	c.goConChan <- 1
 	go func(session sarama.ConsumerGroupSession, message *sarama.ConsumerMessage) {
 		defer func() {
@@ -42,7 +41,7 @@ func (c *KafkaConsumerSt) asyncConsumer(message *sarama.ConsumerMessage, session
 		}()
 
 		sTime := time.Now() //统计任务执行时长
-		if err = c.consumer.Accept(message.Topic, message.Value); err != nil {
+		if isOk := c.consumer.Accept(message.Topic, message.Value); !isOk {
 			c.reset(message) //重试逻辑-再次入队列一次
 		}
 		log.Write(log.INFO, message.Topic, "Kafka任务执行时长:", time.Since(sTime))
@@ -56,7 +55,7 @@ func (c *KafkaConsumerSt) asyncConsumer(message *sarama.ConsumerMessage, session
 // 同步的执行任务处理业务逻辑
 func (c *KafkaConsumerSt) syncConsumer(message *sarama.ConsumerMessage, session sarama.ConsumerGroupSession) {
 	sTime := time.Now()
-	if err := c.consumer.Accept(message.Topic, message.Value); err != nil {
+	if isOk := c.consumer.Accept(message.Topic, message.Value); !isOk {
 		c.reset(message) //重试逻辑-再次入队列一次
 	}
 	log.Write(log.INFO, message.Topic, "任务执行时长:", time.Since(sTime))
