@@ -7,28 +7,28 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	
+
 	"git.ziniao.com/webscraper/go-gin-http/queue/consumer"
 	"git.ziniao.com/webscraper/go-orm/log"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
-
 
 type RabbitMqSt struct {
 	Url        string `yaml:"url"`
 	Durable    bool   `yaml:"durable"`
 	AutoAck    bool   `yaml:"auto_ack"`
 	AutoDelete bool   `yaml:"auto_delete"`
-	QueueSt   //集成基础结构体
+	QueueSt           //集成基础结构体
 	state      map[string]*consumer.RabbitMqStateSt
 	conn       *amqp.Connection
 }
 
 //获取一个消息对了的管道
 func (s *RabbitMqSt) getState(topic string) *consumer.RabbitMqStateSt {
-	if state, ok := s.state[topic]; ok {
+	if state, ok := s.state[topic]; ok && !state.Channel.IsClosed() {
 		return state
 	}
+	s.Init() //完成初始化逻辑
 	state := &consumer.RabbitMqStateSt{}
 	if err := state.Init(topic, s.Durable, s.AutoDelete, s.conn); err != nil {
 		return nil
@@ -56,7 +56,7 @@ func (s *RabbitMqSt) Publish(topic string, data interface{}) (err error) {
 	for i := 0; i < retryLimit; i++ {
 		state := s.getState(topic)
 		if state == nil {
-			err = errors.New("获取队列["+topic+"]消息管道异常.")
+			err = errors.New("获取队列[" + topic + "]消息管道异常.")
 			continue
 		}
 		err = state.Channel.PublishWithContext(ctx, "", topic, false, false, *pMsg)
@@ -72,6 +72,10 @@ func (s *RabbitMqSt) Publish(topic string, data interface{}) (err error) {
 // 初始化队列的链接处理逻辑 初始化的时候要锁定
 func (s *RabbitMqSt) Init() (err error) {
 	s.once.Do(func() {
+		if s.topics == nil { //初始化一下
+			s.topics = make(TopicConsumeSt)
+		}
+		s.state = make(map[string]*consumer.RabbitMqStateSt)
 		s.conn, err = amqp.Dial(s.Url)
 		if err != nil {
 			log.Write(log.ERROR, "Failed connect ", err)
@@ -99,6 +103,7 @@ func (s *RabbitMqSt) Close() {
 func (s *RabbitMqSt) Start() (err error) {
 	keepRunning := true
 	s.Init() //完成初始化
+	s.consumerCtx, s.consumerCancel = context.WithCancel(context.Background())
 	//遍历注册consumer到消费组当中
 	for topic, consumerWrapper := range s.topics {
 		s.consumerStart(topic, &consumerWrapper)
@@ -123,14 +128,14 @@ func (s *RabbitMqSt) Start() (err error) {
 
 //开始一个执行消息的队列处理逻辑
 func (s *RabbitMqSt) consumerStart(topic string, cWrapper *consumerWrapperSt) {
-	state := s.getState(topic)
 	cc := consumer.NewRabbitMqConsumer(cWrapper.conCurrency, s.AutoAck, topic, cWrapper.handle, s.Publish)
 	s.consumerWg.Add(1)
 	go func() {
 		defer s.consumerWg.Done()
 		for {
-			if err := cc.ConsumeClaim(s.AutoAck, state); err != nil {
-				log.Write(log.ERROR, "Error from consumer: %v", err)
+			state := s.getState(topic)
+			if err := cc.ConsumeClaim(s.AutoAck, s.consumerCtx, state); err != nil {
+				log.Write(log.ERROR, "Error from consumer:", err)
 			} //独立线程
 			log.Write(-1, "Consume 重新进入操作逻辑...", s.consumerCtx.Err())
 			// check if context was cancelled, signaling that the consumer should stop

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"sync"
-	
+
 	"git.ziniao.com/webscraper/go-gin-http/queue/consumer"
 )
 
@@ -21,12 +21,12 @@ type consumerWrapperSt struct {
 type TopicConsumeSt map[string]consumerWrapperSt
 
 type QueueSt struct {
-	consumerCtx    context.Context      `yaml:"-"`
-	consumerCancel context.CancelFunc   `yaml:"-"`
-	consumerWg     sync.WaitGroup       `yaml:"-"`
-	topics TopicConsumeSt `yaml:"-"` //注册的主题和消费者信息
-	once   sync.Once      `yaml:"-"` //执行初始化一次
-	l      sync.Mutex     `yaml:"-"` //生产者发布消息的时候锁一下避免并发导致错误
+	consumerCtx    context.Context    `yaml:"-"`
+	consumerCancel context.CancelFunc `yaml:"-"`
+	consumerWg     sync.WaitGroup     `yaml:"-"`
+	topics         TopicConsumeSt     `yaml:"-"` //注册的主题和消费者信息
+	once           sync.Once          `yaml:"-"` //执行初始化一次
+	l              sync.Mutex         `yaml:"-"` //生产者发布消息的时候锁一下避免并发导致错误
 }
 
 // 获取队列的主题数据资料信息
@@ -46,11 +46,14 @@ func (s *QueueSt) Register(topic string, consumer consumer.IFConsumer) {
 
 // 注册订阅队列和消费者绑定关闭 允许设置并发开启线程数量
 func (s *QueueSt) RegisterN(topic string, conCurrency int, consumer consumer.IFConsumer) {
+	s.l.Lock()
+	defer s.l.Unlock()
+	if s.topics == nil { //实例化
+		s.topics = make(TopicConsumeSt)
+	}
 	if s.topics == nil {
 		panic("队列未执行Init初始化操作")
 	}
-	s.l.Lock()
-	defer s.l.Unlock()
 	s.topics[topic] = consumerWrapperSt{handle: consumer, conCurrency: conCurrency}
 }
 

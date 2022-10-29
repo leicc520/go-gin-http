@@ -2,71 +2,32 @@ package queue
 
 import (
 	"fmt"
-	"git.ziniao.com/webscraper/go-orm"
-	"git.ziniao.com/webscraper/go-orm/log"
-	"strconv"
 	"testing"
 	"time"
 )
 
-func TestRetry(t *testing.T) {
-	q := IFQueue(&RabbitMqSt{Url: "amqp://guest:guest@10.100.72.102:5672/", Queue: "demo"})
-	q.Init()
-	go func() {
-		for {
-			time.Sleep(time.Second * 1)
-			q.Close()
-		}
-	}()
+func TestPushRabbitMQ(t *testing.T) {
+	q := IFQueue(&RabbitMqSt{Url: "amqp://guest:guest@192.168.138.128:5673/", AutoAck: false})
 
-	go func() {
-		for i := 0; i < 100; i++ {
-			q.Publish("111111==" + strconv.FormatInt(int64(i), 10))
-			time.Sleep(time.Millisecond * 500)
-		}
-	}()
-	err := q.Consumer(func(bytes []byte) error {
-		fmt.Println(string(bytes))
-		return nil
-	})
-	fmt.Println(err)
+	for i := 0; i < 10000; i++ {
+		str := fmt.Sprintf("test%08d", i)
+		err := q.Publish("test", str)
+		fmt.Println(err)
+		time.Sleep(time.Second)
+	}
 }
 
-func TestQueue(t *testing.T) {
-	q := IFQueue(&RabbitMqSt{Url: "amqp://guest:guest@10.100.72.102:5672/", Queue: "demo"})
+type ConsumerDemo struct {
+}
 
-	err := q.Init()
-	if err != nil {
-		return
-	}
-	defer q.Close()
-	cb := func([]byte) error { return nil }
-	go q.AsyncConsumer(3, cb)
+func (d *ConsumerDemo) Accept(topic string, message []byte) error {
+	fmt.Println(topic, message)
+	return nil
+}
 
-	sp := func(i int, max int) {
-		for i < max {
-			q.Publish(orm.SqlMap{"data": i})
-			log.Write(log.INFO, i)
-			i++
-			time.Sleep(time.Millisecond * 50)
-		}
-	}
-
-	go sp(1, 1000000)
-	go sp(30, 50)
-	go sp(1, 20)
-	go sp(30, 50)
-	go sp(1, 20)
-	go sp(30, 50)
-	go sp(1, 20)
-	go sp(30, 50)
-	go sp(1, 20)
-	go sp(30, 50)
-	go sp(1, 20)
-	go sp(30, 50)
-
-	sp(60, 100)
-
-	c := make(chan int)
-	<-c
+func TestConsumerRabbitMQ(t *testing.T) {
+	c := ConsumerDemo{}
+	q := IFQueue(&RabbitMqSt{Url: "amqp://guest:guest@192.168.138.128:5673/", AutoAck: false})
+	q.Register("test", &c)
+	q.Start()
 }

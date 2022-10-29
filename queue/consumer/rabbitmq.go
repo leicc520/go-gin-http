@@ -6,16 +6,16 @@ import (
 	"fmt"
 	"sync"
 	"time"
-	
+
 	"git.ziniao.com/webscraper/go-orm/log"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 //获取rabbitmq状态
 type RabbitMqStateSt struct {
-	Version    int //版本号管理，每次初始化+1，ack确认需要版本一直,否则丢弃
-	Channel   *amqp.Channel
-	Queue      amqp.Queue
+	Version int //版本号管理，每次初始化+1，ack确认需要版本一直,否则丢弃
+	Channel *amqp.Channel
+	Queue   amqp.Queue
 }
 
 //关闭管道处理逻辑
@@ -27,7 +27,7 @@ func (s *RabbitMqStateSt) Close() {
 }
 
 //初始化创建一个消息管道
-func (s *RabbitMqStateSt) Init(topic string, durable, autoDelete bool,  conn *amqp.Connection) (err error) {
+func (s *RabbitMqStateSt) Init(topic string, durable, autoDelete bool, conn *amqp.Connection) (err error) {
 	s.Channel, err = conn.Channel()
 	if err != nil {
 		log.Write(log.ERROR, "Failed to open a channel", err)
@@ -37,9 +37,9 @@ func (s *RabbitMqStateSt) Init(topic string, durable, autoDelete bool,  conn *am
 		topic,      // name
 		durable,    // durable
 		autoDelete, // delete when unused
-		false,        // exclusive
-		false,        // no-wait
-		nil,          // arguments
+		false,      // exclusive
+		false,      // no-wait
+		nil,        // arguments
 	)
 	if err != nil {
 		log.Write(log.ERROR, "Failed to declare a queue", err)
@@ -51,13 +51,13 @@ func (s *RabbitMqStateSt) Init(topic string, durable, autoDelete bool,  conn *am
 // 获取消费队列管道数据信息
 func (s *RabbitMqStateSt) consumer(autoAck bool) (<-chan amqp.Delivery, error) {
 	msgChan, err := s.Channel.Consume(
-		s.Queue.Name,  // queue
-		"",        // consumer
-		autoAck, // auto-ack
-		false,     // exclusive
-		false,     // no-local
-		false,     // no-wait
-		nil,       // args
+		s.Queue.Name, // queue
+		"",           // consumer
+		autoAck,      // auto-ack
+		false,        // exclusive
+		false,        // no-local
+		false,        // no-wait
+		nil,          // args
 	)
 	if err != nil {
 		log.Write(log.ERROR, s.Queue.Name, "Failed to register a consumer", s.Channel.IsClosed(), err)
@@ -68,8 +68,8 @@ func (s *RabbitMqStateSt) consumer(autoAck bool) (<-chan amqp.Delivery, error) {
 // 消费者结构数据信息
 type RabbitMqConsumerSt struct {
 	state *RabbitMqStateSt
-	ctx context.Context
-	l sync.Mutex
+	ctx   context.Context
+	l     sync.Mutex
 	consumerSt
 }
 
@@ -79,7 +79,6 @@ func NewRabbitMqConsumer(conCurrency int, autoAck bool, topic string, h IFConsum
 	c.init(conCurrency, autoAck, topic, h, p)
 	return c
 }
-
 
 // 确认队列的处理逻辑 释放
 func (c *RabbitMqConsumerSt) Ack(deliveryTag uint64, err error) error {
@@ -102,7 +101,7 @@ func (c *RabbitMqConsumerSt) Ack(deliveryTag uint64, err error) error {
 //同步的消费处理逻辑
 func (c *RabbitMqConsumerSt) syncConsumer(dMsg amqp.Delivery) {
 	sTime := time.Now()
-	err := c.consumer.Accept(c.topic, dMsg.Body)  //业务只需关注数据即可
+	err := c.consumer.Accept(c.topic, dMsg.Body) //业务只需关注数据即可
 	log.Write(log.INFO, c.topic, "任务执行时长:", time.Since(sTime))
 	c.Ack(dMsg.DeliveryTag, err) //处理完结确认
 }
@@ -125,13 +124,13 @@ func (c *RabbitMqConsumerSt) asyncConsumer(dMsg amqp.Delivery) {
 }
 
 // ConsumeClaim must start a consumer loop of ConsumerGroupClaim's Messages().
-func (c *RabbitMqConsumerSt) ConsumeClaim(autoAck bool, state *RabbitMqStateSt) (err error) {
+func (c *RabbitMqConsumerSt) ConsumeClaim(autoAck bool, ctx context.Context, state *RabbitMqStateSt) (err error) {
 	var msgChan <-chan amqp.Delivery = nil
 	msgChan, err = state.consumer(autoAck)
 	if err != nil {
 		return err
 	}
-	c.state = state //复制到对象内部
+	c.state, c.ctx = state, ctx //复制到对象内部
 	defer func() {
 		if e := recover(); e != nil {
 			log.Write(-1, c.topic, "ConsumeClaim 结束异常", e)
@@ -146,7 +145,7 @@ func (c *RabbitMqConsumerSt) ConsumeClaim(autoAck bool, state *RabbitMqStateSt) 
 				log.Write(-1, c.topic, "queue closed", c.state.Channel.IsClosed(), message)
 				if c.state.Channel.IsClosed() {
 					err = errors.New(c.topic + " queue closed")
-					break
+					return err
 				}
 				continue
 			}
@@ -162,6 +161,3 @@ func (c *RabbitMqConsumerSt) ConsumeClaim(autoAck bool, state *RabbitMqStateSt) 
 	}
 	return nil
 }
-
-
-
