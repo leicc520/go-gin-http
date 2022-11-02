@@ -1,4 +1,4 @@
-package queue
+package kafka
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"git.ziniao.com/webscraper/go-gin-http/queue/consumer"
+	"git.ziniao.com/webscraper/go-gin-http/queue"
 	"git.ziniao.com/webscraper/go-orm/log"
 	"github.com/Shopify/sarama"
 )
@@ -18,30 +18,30 @@ import (
 ************************************************************************************************/
 
 type KafkaMqSt struct {
-	NodeSrv      string               `yaml:"node_srv"`                          //:9092 broker地址,使用都好分割
-	AutoAck      bool                 `yaml:"auto_ack" default:"true"`           //消费的时候是否自动自动确认
-	Group        string               `yaml:"group"`                             //消费的分组编号
-	IsSASL       bool                 `yaml:"is_sasl" default:"false"`           //是否开启认证
-	User         string               `yaml:"user"`                              //链接的账号
-	Password     string               `yaml:"password"`                          //链接的密码
-	Mechanism    string               `yaml:"mechanism" default:"SCRAM-SHA-256"` //认证机制
-	Version      string               `yaml:"version" default:"2.8.1"`           //kafka版本号
-	Assignor     string               `yaml:"assignor"`                          //partition的获取策略
-	Oldest       bool                 `yaml:"oldest"`                            //从什么位置开始消费
-	QueueSt                           //集成基础结构体
-	syncProducer sarama.SyncProducer  `yaml:"-"` //主要用作发信息
-	syncConsumer sarama.ConsumerGroup `yaml:"-"` //消费者群组
+	NodeSrv       string               `yaml:"node_srv"`                          //:9092 broker地址,使用都好分割
+	AutoAck       bool                 `yaml:"auto_ack" default:"true"`           //消费的时候是否自动自动确认
+	Group         string               `yaml:"group"`                             //消费的分组编号
+	IsSASL        bool                 `yaml:"is_sasl" default:"false"`           //是否开启认证
+	User          string               `yaml:"user"`                              //链接的账号
+	Password      string               `yaml:"password"`                          //链接的密码
+	Mechanism     string               `yaml:"mechanism" default:"SCRAM-SHA-256"` //认证机制
+	Version       string               `yaml:"version" default:"2.8.1"`           //kafka版本号
+	Assignor      string               `yaml:"assignor"`                          //partition的获取策略
+	Oldest        bool                 `yaml:"oldest"`                            //从什么位置开始消费
+	queue.QueueSt                      //集成基础结构体
+	syncProducer  sarama.SyncProducer  `yaml:"-"` //主要用作发信息
+	syncConsumer  sarama.ConsumerGroup `yaml:"-"` //消费者群组
 }
 
 // 初始化处理逻辑,需要执行一次即可
 func (s *KafkaMqSt) initConsumer() (err error) {
-	s.once.Do(func() {
-		if s.topics == nil {
-			s.topics = make(TopicConsumeSt)
+	s.Once.Do(func() {
+		if s.Topics == nil {
+			s.Topics = make(queue.TopicConsumeSt)
 		}
 	})
 	config := s._config()
-	s.consumerCtx, s.consumerCancel = context.WithCancel(context.Background())
+	s.ConsumerCtx, s.ConsumerCancel = context.WithCancel(context.Background())
 	nodeSrv := strings.Split(s.NodeSrv, ",")
 	s.syncConsumer, err = sarama.NewConsumerGroup(nodeSrv, s.Group, config)
 	if err != nil { //创建消费组失败的情况
@@ -52,8 +52,8 @@ func (s *KafkaMqSt) initConsumer() (err error) {
 
 // 关闭链接的处理逻辑
 func (s *KafkaMqSt) Close() {
-	s.l.Lock()
-	defer s.l.Unlock()
+	s.L.Lock()
+	defer s.L.Unlock()
 	s.closeProducer(false)
 	if s.syncConsumer != nil {
 		s.syncConsumer.Close()
@@ -102,12 +102,12 @@ func (s *KafkaMqSt) initSyncProducer() (err error) {
 func (s *KafkaMqSt) Publish(topic string, data interface{}) (err error) {
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
-		Value: sarama.ByteEncoder(s.format(data)),
+		Value: sarama.ByteEncoder(s.Format(data)),
 	}
-	s.l.Lock()
-	defer s.l.Unlock()
+	s.L.Lock()
+	defer s.L.Unlock()
 	_partition, _offset := int32(-1), int64(-1)
-	for i := 0; i < retryLimit; i++ { //发布消息失败重试3次的处理逻辑
+	for i := 0; i < queue.RetryLimit; i++ { //发布消息失败重试3次的处理逻辑
 		if err = s.initSyncProducer(); err != nil { //连接失败等待一秒重连
 			s.closeProducer(true)
 			continue
@@ -186,10 +186,10 @@ func (s *KafkaMqSt) Start() (err error) {
 	s.initConsumer() //初始化完成
 	keepRunning := true
 	consumptionIsPaused := false
-	regAccept := make(map[string]*consumer.KafkaConsumerSt)
-	for topic, cWrapper := range s.topics { //创建消费者对象逻辑
-		regAccept[topic] = consumer.NewKafkaConsumer(cWrapper.conCurrency,
-			s.AutoAck, topic, cWrapper.handle, s.Publish)
+	regAccept := make(map[string]*kafkaConsumerSt)
+	for topic, cWrapper := range s.Topics { //创建消费者对象逻辑
+		regAccept[topic] = NewKafkaConsumer(cWrapper.ConCurrency,
+			s.AutoAck, topic, cWrapper.Handle, s.Publish)
 	}
 	s.consumerStart(regAccept) //启动消费服务监听
 	sigusr1 := make(chan os.Signal, 1)
@@ -198,7 +198,7 @@ func (s *KafkaMqSt) Start() (err error) {
 	signal.Notify(sigterm, syscall.SIGINT, syscall.SIGTERM)
 	for keepRunning {
 		select {
-		case <-s.consumerCtx.Done():
+		case <-s.ConsumerCtx.Done():
 			log.Write(-1, "terminating: context cancelled")
 			keepRunning = false
 		case <-sigterm:
@@ -208,33 +208,33 @@ func (s *KafkaMqSt) Start() (err error) {
 			s.toggleConsumptionFlow(&consumptionIsPaused)
 		}
 	}
-	s.consumerCancel()
-	s.consumerWg.Wait()
+	s.ConsumerCancel()
+	s.ConsumerWg.Wait()
 	s.Close() //执行退出了
 	return nil
 }
 
 // 启动一个消费者处理逻辑业务
-func (s *KafkaMqSt) consumerStart(regAccept map[string]*consumer.KafkaConsumerSt) {
-	s.consumerWg.Add(1)
-	cc := consumer.NewKafkaConsumeClaim(regAccept)
+func (s *KafkaMqSt) consumerStart(regAccept map[string]*kafkaConsumerSt) {
+	s.ConsumerWg.Add(1)
+	cc := NewKafkaConsumeClaim(regAccept)
 	go func() {
-		defer s.consumerWg.Done()
+		defer s.ConsumerWg.Done()
 		for {
 			// `Consume` should be called inside an infinite loop, when a
 			// server-side rebalance happens, the consumer session will need to be
 			// recreated to get the new claims
-			if err := s.syncConsumer.Consume(s.consumerCtx, s.Topics(), cc); err != nil {
+			if err := s.syncConsumer.Consume(s.ConsumerCtx, s.GetTopics(), cc); err != nil {
 				log.Write(log.ERROR, "Error from consumer: %v", err)
 			}
-			log.Write(-1, "Consume 重新进入操作逻辑...", s.consumerCtx.Err())
+			log.Write(-1, "Consume 重新进入操作逻辑...", s.ConsumerCtx.Err())
 			// check if context was cancelled, signaling that the consumer should stop
-			if s.consumerCtx.Err() != nil {
+			if s.ConsumerCtx.Err() != nil {
 				return
 			}
 			cc.Ready = make(chan bool)
 		}
 	}()
 	<-cc.Ready // Await till the consumer has been set up
-	log.Write(log.INFO, "Sarama consumer["+strings.Join(s.Topics(), ",")+"] up and running!...")
+	log.Write(log.INFO, "Sarama consumer["+strings.Join(s.GetTopics(), ",")+"] up and running!...")
 }

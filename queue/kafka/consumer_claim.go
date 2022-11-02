@@ -1,4 +1,4 @@
-package consumer
+package kafka
 
 import (
 	"git.ziniao.com/webscraper/go-orm/log"
@@ -6,30 +6,30 @@ import (
 )
 
 // 消费者结构数据信息
-type KafkaConsumeClaimSt struct {
-	regConsumer map[string]*KafkaConsumerSt
+type consumeClaimSt struct {
+	regConsumer map[string]*kafkaConsumerSt
 	Ready       chan bool
 }
 
 // 创建一个消费者处理逻辑
-func NewKafkaConsumeClaim(reg map[string]*KafkaConsumerSt) *KafkaConsumeClaimSt {
-	c := &KafkaConsumeClaimSt{Ready: make(chan bool), regConsumer: reg}
+func NewKafkaConsumeClaim(reg map[string]*kafkaConsumerSt) *consumeClaimSt {
+	c := &consumeClaimSt{Ready: make(chan bool), regConsumer: reg}
 	return c
 }
 
 // Setup is run at the beginning of a new session, before ConsumeClaim
-func (c *KafkaConsumeClaimSt) Setup(sarama.ConsumerGroupSession) error {
+func (c *consumeClaimSt) Setup(sarama.ConsumerGroupSession) error {
 	// Mark the consumer as ready
 	close(c.Ready)
 	return nil
 }
 
 // Cleanup is run at the end of a session, once all ConsumeClaim goroutines have exited
-func (c *KafkaConsumeClaimSt) Cleanup(sarama.ConsumerGroupSession) error {
+func (c *consumeClaimSt) Cleanup(sarama.ConsumerGroupSession) error {
 	if c.regConsumer != nil { //并发处理的话关闭句柄
 		for _, regAccept := range c.regConsumer {
-			if regAccept.conCurrency > 1 {
-				close(regAccept.goConChan)
+			if regAccept.ConCurrency > 1 {
+				close(regAccept.GoConChan)
 			}
 		}
 	}
@@ -37,7 +37,7 @@ func (c *KafkaConsumeClaimSt) Cleanup(sarama.ConsumerGroupSession) error {
 }
 
 // ConsumeClaim must start a consumer loop of ConsumerGroupClaim's Messages().
-func (c *KafkaConsumeClaimSt) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+func (c *consumeClaimSt) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for {
 		select {
 		case message := <-claim.Messages():

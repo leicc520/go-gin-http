@@ -1,4 +1,4 @@
-package queue
+package kafka
 
 import (
 	"crypto/sha256"
