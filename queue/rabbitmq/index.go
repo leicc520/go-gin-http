@@ -114,7 +114,8 @@ func (s *RabbitMqSt) Close() {
 }
 
 // 启动服务的处理逻辑
-func (s *RabbitMqSt) Start() (err error) {
+func (s *RabbitMqSt) Start(h func()) (err error) {
+	h() //回调注册处理逻辑
 	keepRunning := true
 	s.init() //完成初始化
 	s.ConsumerCtx, s.ConsumerCancel = context.WithCancel(context.Background())

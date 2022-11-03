@@ -182,7 +182,8 @@ func (s *KafkaMqSt) _config() *sarama.Config {
 }
 
 // 开始一个服务处理逻辑
-func (s *KafkaMqSt) Start() (err error) {
+func (s *KafkaMqSt) Start(h func()) (err error) {
+	h()              //回调注册处理逻辑
 	s.initConsumer() //初始化完成
 	keepRunning := true
 	consumptionIsPaused := false

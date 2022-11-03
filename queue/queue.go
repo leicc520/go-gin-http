@@ -72,5 +72,5 @@ type IFQueue interface {
 	Publish(topic string, data interface{}) error
 	Register(topic string, consumer IFConsumer)
 	RegisterN(topic string, conCurrency int, consumer IFConsumer)
-	Start() error //启动服务的处理逻辑
+	Start(h func()) error //启动服务的处理逻辑
 }
