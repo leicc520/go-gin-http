@@ -28,6 +28,8 @@ func (s *RabbitMqSt) getState(topic string) *rabbitMqStateSt {
 	if state, ok := s.state[topic]; ok && !state.Channel.IsClosed() {
 		return state
 	}
+	s.L.Lock()
+	defer s.L.Unlock()
 	s.init() //完成初始化逻辑
 	state := &rabbitMqStateSt{}
 	if err := state.Init(topic, s.Durable, s.AutoDelete, s.conn); err != nil {
@@ -45,8 +47,6 @@ func (s *RabbitMqSt) Publish(topic string, data interface{}) (err error) {
 		body := s.Format(data)
 		pMsg = &amqp.Publishing{ContentType: "text/plain", Body: body}
 	}
-	s.L.Lock()
-	defer s.L.Unlock()
 	ctx := context.Background()
 	for i := 0; i < queue.RetryLimit; i++ {
 		state := s.getState(topic)
@@ -101,11 +101,14 @@ func (s *RabbitMqSt) init() (err error) {
 
 // 关闭队列处理逻辑
 func (s *RabbitMqSt) Close() {
-	s.L.Lock()
-	defer s.L.Unlock()
 	if s.conn != nil { //关闭代理
 		s.conn.Close()
 		s.conn = nil
+	}
+	//结束任务
+	if s.ConsumerCancel != nil {
+		s.ConsumerCancel()
+		s.ConsumerCancel = nil
 	}
 	for topic, state := range s.state {
 		state.Close()

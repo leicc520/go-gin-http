@@ -55,6 +55,11 @@ func (s *KafkaMqSt) Close() {
 	s.L.Lock()
 	defer s.L.Unlock()
 	s.closeProducer(false)
+	//结束任务
+	if s.ConsumerCancel != nil {
+		s.ConsumerCancel()
+		s.ConsumerCancel = nil
+	}
 	if s.syncConsumer != nil {
 		s.syncConsumer.Close()
 		s.syncConsumer = nil

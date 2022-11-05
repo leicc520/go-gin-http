@@ -69,6 +69,7 @@ func (s *QueueSt) Format(data interface{}) []byte {
 
 // 定义任务队列的处理逻辑
 type IFQueue interface {
+	Close() //释放任务
 	Publish(topic string, data interface{}) error
 	Register(topic string, consumer IFConsumer)
 	RegisterN(topic string, conCurrency int, consumer IFConsumer)
