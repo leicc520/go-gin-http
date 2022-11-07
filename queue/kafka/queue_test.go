@@ -35,28 +35,35 @@ func TestPushv2KafkaMQ(t *testing.T) {
 		str := fmt.Sprintf("demo%08d", i)
 		err := q.Publish("demo", str)
 		fmt.Println(err)
-		time.Sleep(time.Millisecond * 10)
+		time.Sleep(time.Second * 1)
 	}
 }
 
 func TestConsumerKafkaMQ(t *testing.T) {
-	c := ConsumerDemo{Result: false, Group: "demo", Sleep: time.Second}
-	d := ConsumerDemo{Result: true, Group: "demo", Sleep: time.Second}
+	//c := ConsumerDemo{Result: false, Group: "demo", Sleep: time.Second}
+	d := ConsumerDemo{Result: true, Group: "demo---------------1", Sleep: time.Second}
 	q := queue.IFQueue(&KafkaMqSt{NodeSrv: "10.100.72.102:9092", Version: "2.8.1", Group: "demo", AutoAck: false})
-	q.Register("test", &c)
-	q.RegisterN("demo", 4, &d)
+	//q.Register("test", &c)
+
 	go func() {
 		time.Sleep(time.Second * 3)
 		q.Publish("test", "11111111111111111")
 	}()
-	q.Start()
+	q.Start(func() {
+		q.RegisterN("demo", 4, &d)
+	})
 }
 
 func TestConsumerKafkaMQv2(t *testing.T) {
-	c := ConsumerDemo{Result: true, Group: "demov2", Sleep: time.Second}
-	d := ConsumerDemo{Result: true, Group: "demov2", Sleep: time.Second}
-	q := queue.IFQueue(&KafkaMqSt{NodeSrv: "10.100.72.102:9092", Version: "2.8.1", Group: "demov2", AutoAck: false})
-	q.Register("test", &c)
-	q.RegisterN("demo", 4, &d)
-	q.Start()
+	//c := ConsumerDemo{Result: true, Group: "demov2", Sleep: time.Second}
+	d := ConsumerDemo{Result: true, Group: "demo-------------2", Sleep: time.Second}
+	q := queue.IFQueue(&KafkaMqSt{NodeSrv: "10.100.72.102:9092", Version: "2.8.1", Group: "demo", AutoAck: false})
+	//q.Register("test", &c)
+	go func() {
+		time.Sleep(time.Second * 3)
+		q.Publish("demo", "11111111111111111")
+	}()
+	q.Start(func() {
+		q.RegisterN("demo", 4, &d)
+	})
 }

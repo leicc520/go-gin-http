@@ -26,13 +26,7 @@ func (c *consumeClaimSt) Setup(sarama.ConsumerGroupSession) error {
 
 // Cleanup is run at the end of a session, once all ConsumeClaim goroutines have exited
 func (c *consumeClaimSt) Cleanup(sarama.ConsumerGroupSession) error {
-	if c.regConsumer != nil { //并发处理的话关闭句柄
-		for _, regAccept := range c.regConsumer {
-			if regAccept.ConCurrency > 1 {
-				close(regAccept.GoConChan)
-			}
-		}
-	}
+	log.Write(log.DEBUG, "Claim清理数据", c.regConsumer)
 	return nil
 }
 
@@ -53,4 +47,15 @@ func (c *consumeClaimSt) ConsumeClaim(session sarama.ConsumerGroupSession, claim
 		}
 	}
 	return nil
+}
+
+// 关闭句柄数据资料信息
+func (c *consumeClaimSt) Close() {
+	if c.regConsumer != nil { //并发处理的话关闭句柄
+		for _, regAccept := range c.regConsumer {
+			if regAccept.ConCurrency > 1 {
+				close(regAccept.GoConChan)
+			}
+		}
+	}
 }

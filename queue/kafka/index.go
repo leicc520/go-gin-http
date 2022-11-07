@@ -153,7 +153,7 @@ func (s *KafkaMqSt) _config() *sarama.Config {
 		}
 	}
 	config.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{sarama.BalanceStrategyRange}
-	config.Consumer.Offsets.Initial = sarama.OffsetOldest
+	config.Consumer.Offsets.Initial = sarama.OffsetNewest
 	if s.IsSASL {
 		config.Net.SASL.Enable = s.IsSASL
 		config.Net.SASL.User = s.User
@@ -177,8 +177,8 @@ func (s *KafkaMqSt) _config() *sarama.Config {
 	default:
 		log.Write(log.INFO, "Unrecognized consumer group partition assignor: ", s.Assignor)
 	}
-	if !s.Oldest {
-		config.Consumer.Offsets.Initial = sarama.OffsetNewest
+	if s.Oldest {
+		config.Consumer.Offsets.Initial = sarama.OffsetOldest
 	}
 	if !s.AutoAck { //执行手动确认的处理逻辑
 		config.Consumer.Offsets.AutoCommit.Enable = false
@@ -197,7 +197,7 @@ func (s *KafkaMqSt) Start(h func()) (err error) {
 		regAccept[topic] = NewKafkaConsumer(cWrapper.ConCurrency,
 			s.AutoAck, topic, cWrapper.Handle, s.Publish)
 	}
-	s.consumerStart(regAccept) //启动消费服务监听
+	cc := s.consumerStart(regAccept) //启动消费服务监听
 	sigusr1 := make(chan os.Signal, 1)
 	signal.Notify(sigusr1, syscall.SIGHUP)
 	sigterm := make(chan os.Signal, 1)
@@ -216,12 +216,13 @@ func (s *KafkaMqSt) Start(h func()) (err error) {
 	}
 	s.ConsumerCancel()
 	s.ConsumerWg.Wait()
-	s.Close() //执行退出了
+	s.Close()  //执行退出了
+	cc.Close() //关闭句柄数据信息
 	return nil
 }
 
 // 启动一个消费者处理逻辑业务
-func (s *KafkaMqSt) consumerStart(regAccept map[string]*kafkaConsumerSt) {
+func (s *KafkaMqSt) consumerStart(regAccept map[string]*kafkaConsumerSt) *consumeClaimSt {
 	s.ConsumerWg.Add(1)
 	cc := NewKafkaConsumeClaim(regAccept)
 	go func() {
@@ -243,4 +244,5 @@ func (s *KafkaMqSt) consumerStart(regAccept map[string]*kafkaConsumerSt) {
 	}()
 	<-cc.Ready // Await till the consumer has been set up
 	log.Write(log.INFO, "Sarama consumer["+strings.Join(s.GetTopics(), ",")+"] up and running!...")
+	return cc
 }
