@@ -21,12 +21,14 @@ func NewKafkaConsumer(conCurrency int, autoAck bool, topic string, h queue.IFCon
 }
 
 // 重试机制的出来逻辑
-func (c *kafkaConsumerSt) reset(message *sarama.ConsumerMessage) {
+func (c *kafkaConsumerSt) reset(message *sarama.ConsumerMessage) bool {
 	if c.Push != nil { //更新数据信息
 		if err := c.Push(message.Topic, message.Value); err != nil {
 			log.Write(log.DEBUG, "Kafka重试重新入队列异常", err)
+			return false
 		}
 	}
+	return true
 }
 
 // 异步消费的处理逻辑
@@ -47,7 +49,9 @@ func (c *kafkaConsumerSt) asyncConsumer(message *sarama.ConsumerMessage, session
 func (c *kafkaConsumerSt) syncConsumer(message *sarama.ConsumerMessage, session sarama.ConsumerGroupSession) {
 	sTime := time.Now()
 	if isOk := c.Consumer.Accept(message.Topic, message.Value); !isOk {
-		c.reset(message) //重试逻辑-再次入队列一次
+		if !c.reset(message) { //重试逻辑-再次入队列一次
+			return
+		}
 	}
 	log.Write(log.INFO, message.Topic, "任务执行时长:", time.Since(sTime))
 	//处理成功标记完成 否则继续处理
