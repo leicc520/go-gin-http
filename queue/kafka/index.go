@@ -28,7 +28,7 @@ type KafkaMqSt struct {
 	Version       string               `yaml:"version" default:"2.8.1"`           //kafka版本号
 	Assignor      string               `yaml:"assignor"`                          //partition的获取策略
 	Oldest        bool                 `yaml:"oldest"`                            //从什么位置开始消费
-	queue.QueueSt                      //集成基础结构体
+	queue.QueueSt `yaml:",inline"`     //集成基础结构体
 	syncProducer  sarama.SyncProducer  `yaml:"-"` //主要用作发信息
 	syncConsumer  sarama.ConsumerGroup `yaml:"-"` //消费者群组
 }
@@ -194,6 +194,9 @@ func (s *KafkaMqSt) Start(h func()) (err error) {
 	consumptionIsPaused := false
 	regAccept := make(map[string]*kafkaConsumerSt)
 	for topic, cWrapper := range s.Topics { //创建消费者对象逻辑
+		if !cWrapper.Enabled || cWrapper.Handle == nil { //关闭的情况
+			continue
+		}
 		regAccept[topic] = NewKafkaConsumer(cWrapper.ConCurrency,
 			s.AutoAck, topic, cWrapper.Handle, s.Publish)
 	}

@@ -14,11 +14,11 @@ import (
 )
 
 type RabbitMqSt struct {
-	Url           string `yaml:"url"`
-	Durable       bool   `yaml:"durable"`
-	AutoAck       bool   `yaml:"auto_ack"`
-	AutoDelete    bool   `yaml:"auto_delete"`
-	queue.QueueSt        //集成基础结构体
+	Url           string           `yaml:"url"`
+	Durable       bool             `yaml:"durable"`
+	AutoAck       bool             `yaml:"auto_ack"`
+	AutoDelete    bool             `yaml:"auto_delete"`
+	queue.QueueSt `yaml:",inline"` //集成基础结构体
 	state         map[string]*rabbitMqStateSt
 	conn          *amqp.Connection
 }
@@ -123,8 +123,11 @@ func (s *RabbitMqSt) Start(h func()) (err error) {
 	s.init() //完成初始化
 	s.ConsumerCtx, s.ConsumerCancel = context.WithCancel(context.Background())
 	//遍历注册consumer到消费组当中
-	for topic, consumerWrapper := range s.Topics {
-		s.consumerStart(topic, &consumerWrapper)
+	for topic, cWrapper := range s.Topics {
+		if !cWrapper.Enabled || cWrapper.Handle == nil {
+			continue
+		}
+		s.consumerStart(topic, &cWrapper)
 	}
 	sigterm := make(chan os.Signal, 1)
 	signal.Notify(sigterm, syscall.SIGINT, syscall.SIGTERM)
