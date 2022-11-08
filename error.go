@@ -25,7 +25,7 @@ var errCode = map[int]string{
 	1016: "记录已存在,请勿重复添加",
 }
 
-//创建一个错误
+// 创建一个错误
 func NewHttpError(code int, msg ...string) HttpError {
 	mStr := strings.Join(msg, ",")
 	if len(mStr) < 3 {
@@ -37,19 +37,16 @@ func NewHttpError(code int, msg ...string) HttpError {
 	return HttpError{Code: code, Msg: mStr}
 }
 
-//标准化输出 -直接输出错误 然后recover当中做拦截
+// 标准化输出 -直接输出错误 然后recover当中做拦截
 func PanicValidateHttpError(code int, err error) {
 	argsErr := NewHttpError(code)
-	if err != nil {
-		argsErr.SetDebug(err.Error()) //具体的报错提示
-	}
 	if transErr := ValidateTranslator(err, nil); transErr != nil {
 		argsErr.Msg = transErr.Error() //具体的报错提示
 	}
-	panic(argsErr)
+	argsErr.Panic(err)
 }
 
-//标准化输出 -直接输出错误 然后recover当中做拦截
+// 标准化输出 -直接输出错误 然后recover当中做拦截
 func PanicHttpError(code int, msg ...string) {
-	panic(NewHttpError(code, msg...))
+	NewHttpError(code, msg...).Panic(nil)
 }
