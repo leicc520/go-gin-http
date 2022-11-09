@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
+	"mime/multipart"
 	"strings"
 	"time"
 
@@ -56,16 +57,8 @@ func (s AliOssSt) Link(ossPath string) string {
 
 // 获取ACL的请求地址 私密bucket获取地址
 func (s AliOssSt) GetFile(ossPath string) (string, error) {
-	ossPath = strings.TrimLeft(ossPath, "/")
-	client, err := oss.New(s.Endpoint, s.AccessKeyId, s.AccessKeySecret)
-	if err != nil {
-		log.Write(log.ERROR, "create alioss error", err)
-		return "", err
-	}
-	// 获取存储空间。
-	bucket, err := client.Bucket(s.Bucket)
-	if err != nil {
-		log.Write(log.ERROR, "get bucket error", err)
+	_, bucket, err := s.init("on")
+	if err != nil { //系统不关闭的情况
 		return "", err
 	}
 	//上传本地文件。
@@ -75,23 +68,52 @@ func (s AliOssSt) GetFile(ossPath string) (string, error) {
 
 // oss上传文件的处理逻辑
 func (s AliOssSt) AliOssUpfile(file, ossPath string) error {
-	if s.IsPush != "on" {
-		return nil //系统不关闭的情况
-	}
-	client, err := oss.New(s.Endpoint, s.AccessKeyId, s.AccessKeySecret)
-	if err != nil {
-		log.Write(log.ERROR, "create alioss error", err)
-		return err
-	}
-	// 获取存储空间。
-	bucket, err := client.Bucket(s.Bucket)
-	if err != nil {
-		log.Write(log.ERROR, "get bucket error", err)
+	_, bucket, err := s.init(s.IsPush)
+	if err != nil || bucket == nil { //系统不关闭的情况
 		return err
 	}
 	//上传本地文件。
 	ossPath = strings.TrimLeft(ossPath, "/")
 	if err = bucket.PutObjectFromFile(ossPath, file); err != nil {
+		log.Write(log.ERROR, "alioss upload file error", err)
+		return err
+	}
+	return nil
+}
+
+// 初始化bucket数据信息
+func (s AliOssSt) init(isPush string) (*oss.Client, *oss.Bucket, error) {
+	if isPush != "on" {
+		return nil, nil, nil //系统不关闭的情况
+	}
+	client, err := oss.New(s.Endpoint, s.AccessKeyId, s.AccessKeySecret)
+	if err != nil {
+		log.Write(log.ERROR, "create alioss error", err)
+		return nil, nil, err
+	}
+	// 获取存储空间。
+	bucket, err := client.Bucket(s.Bucket)
+	if err != nil {
+		log.Write(log.ERROR, "get bucket error", err)
+		return nil, nil, err
+	}
+	return client, bucket, nil
+}
+
+// 上传文件的出来逻辑，直接通过目标上传
+func (s AliOssSt) AliOssUpfileV2(file *multipart.FileHeader, ossPath string) error {
+	fd, err := file.Open()
+	if err != nil { //打开文件失败的情况
+		return err
+	}
+	defer fd.Close()
+	_, bucket, err := s.init(s.IsPush)
+	if err != nil || bucket == nil { //系统不关闭的情况
+		return err
+	}
+	//上传本地文件。
+	ossPath = strings.TrimLeft(ossPath, "/")
+	if err = bucket.PutObject(ossPath, fd); err != nil {
 		log.Write(log.ERROR, "alioss upload file error", err)
 		return err
 	}
