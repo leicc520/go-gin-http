@@ -102,6 +102,11 @@ func (s *HttpSt) SetHeader(header map[string]string) *HttpSt {
 	return s
 }
 
+// 设置请求的header业务数据信息
+func (s *HttpSt) AttHeader(header map[string]string) {
+	s.SetHeader(header) //初始化请求头
+}
+
 // 初始化请求数据头部信息
 func (s *HttpSt) initHeader(req *http.Request) *HttpSt {
 	baseUrl := fmt.Sprintf("%s://%s", req.URL.Scheme, req.URL.Host)
