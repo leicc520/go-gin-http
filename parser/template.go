@@ -92,6 +92,23 @@ func NewTemplates() *TemplatesSt {
 }
 
 // 获取数据资料信息
+func (s *TemplatesSt) Load(templateId, template string) *TemplateSt {
+	s.l.Lock()
+	defer s.l.Unlock()
+	if tpl, ok := s.templates[templateId]; ok {
+		return tpl
+	}
+	tpl := &TemplateSt{Request: &BaseRequest{}}
+	//把yaml形式的字符串解析成struct类型 先子类初始化
+	if err := yaml.Unmarshal([]byte(template), tpl); err != nil {
+		log.Write(log.ERROR, "load Template Config Parse Failed: ", err)
+		return nil
+	}
+	s.templates[templateId] = tpl
+	return tpl
+}
+
+// 获取数据资料信息
 func (s *TemplatesSt) Get(file string) *TemplateSt {
 	s.l.Lock()
 	defer s.l.Unlock()
