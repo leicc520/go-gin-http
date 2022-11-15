@@ -111,8 +111,11 @@ func (s *Monitor) Report(idx int, host string, statusCode int) {
 	logState := logStateSt{ProxyIdx: idx, Host: host, Status: statusCode, Proxy: s.proxy[idx].Proxy}
 	statRedis.Chan() <- logState.toString()
 	if statusCode != http.StatusOK { //请求失败的情况
-		n := atomic.AddUint64(&s.proxy[idx].Error, 1)
-		if n > PROXY_ERROR_LIMIT {
+		n, proxyErr := atomic.AddUint64(&s.proxy[idx].Error, 1), uint64(0)
+		if statusCode == -1 { //说明代理异常的情况
+			proxyErr = atomic.AddUint64(&s.proxy[idx].ProxyError, 1)
+		}
+		if n > PROXY_ERROR_LIMIT || proxyErr >= 3 { //代理失效连续出现三次
 			(&s.proxy[idx]).CutProxy(true) //自动切换ip
 			return
 		}
@@ -128,6 +131,7 @@ func (s *Monitor) Report(idx int, host string, statusCode int) {
 	} else { //只要成功就重置
 		s.proxy[idx].Expire, s.proxy[idx].Status = 0, 1
 		atomic.StoreUint64(&s.proxy[idx].Error, 0)
+		atomic.StoreUint64(&s.proxy[idx].ProxyError, 0)
 	}
 }
 
@@ -138,8 +142,8 @@ func (s *Monitor) Proxy() (int, string) {
 	for i := 0; i < s.len; i++ {
 		idx := int((n + uint64(i)) % uint64(s.len))
 		item := &s.proxy[idx]
-		if len(item.Url) < 1 || !regIpv4.MatchString(item.Url) {
-			item.CutProxy(false) //切代理
+		if len(item.Url) < 1 || regIpv4.MatchString(item.Url) {
+			item.CutProxy(false) //如果是ip模式的话取地址
 		}
 		//状态正常 且解锁的状态 直接处理逻辑即可
 		if item.Status == 1 && len(item.Url) > 0 {
