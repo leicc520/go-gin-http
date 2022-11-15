@@ -27,6 +27,7 @@ func daMaiProxy(proto string, proxy IFProxy) error {
 		log.Write(-1, PROXY_CHANNEL_DAMAIGO, "代理请求异常", bodyStr)
 		return errors.New("代理请求获取地址异常")
 	}
+	log.Write(-1, PROXY_CHANNEL_DAMAIGO, "获取代理", bodyStr)
 	proxy.SetIP(ipList) //更新IP列表
 	return nil
 }

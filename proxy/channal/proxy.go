@@ -62,7 +62,7 @@ func (s *BaseProxySt) callProxy(proto string) error {
 	if distributedCache == nil {
 		return errors.New("ip代理未设置管理redis,无法操作")
 	}
-	locker := locker.NewRedisLock(distributedCache, s.name)
+	locker := locker.NewRedisLock(distributedCache, s.name+"v2")
 	if !locker.Expire(s.proxyTime).Lock() { //获取锁失败的情况
 		return nil
 	}
@@ -103,6 +103,6 @@ func (s *BaseProxySt) GetProxy(proto string) string {
 	}
 	s.idx += 1
 	s.idx = (s.idx + 1) % len(ipList)
-	log.Write(log.INFO, s.name, "切换代理", proto, ipList[s.idx])
+	log.Write(-1, s.name, "切换代理", proto, ipList[s.idx])
 	return strings.TrimSpace(ipList[s.idx])
 }
