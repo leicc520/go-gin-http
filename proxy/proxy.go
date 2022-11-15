@@ -11,8 +11,11 @@ const (
 	PROXY_ERROR_LOCK_TIME  = time.Millisecond * 100
 	PROXY_SYNC_REDIS_TIME  = time.Second * 30
 	PROXY_SYNC_NOTIFY_TIME = time.Hour * 24
-	PROXY_ERROR_LIMIT      = 30        //连续错误30次切换ip
 	PROXY_DEFUALT_NAME     = "default" //默认代理监控
+)
+
+var (
+	PROXY_ERROR_LIMIT = uint64(10) //连续错误10次切换ip
 )
 
 type ProxySt struct {
