@@ -225,7 +225,7 @@ func (s *HttpSt) SetCookie(rawUrl, cookieStr string, isExpire bool) {
 		if len(str) < 1 {
 			continue
 		}
-		value := strings.Split(str, "=")
+		value := strings.SplitN(str, "=", 2)
 		if len(value) == 2 {
 			cookie = append(cookie, &http.Cookie{Name: value[0], Value: value[1], Domain: "." + u.Host, Path: "/", Expires: expire})
 		}
