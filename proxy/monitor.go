@@ -142,6 +142,9 @@ func (s *Monitor) Proxy() (int, string) {
 	for i := 0; i < s.len; i++ {
 		idx := int((n + uint64(i)) % uint64(s.len))
 		item := &s.proxy[idx]
+		if item.Status == 0 { //无效代理不允许使用
+			continue
+		}
 		if len(item.Url) < 1 || regIpv4.MatchString(item.Url) {
 			item.CutProxy(false) //如果是ip模式的话取地址
 		}
